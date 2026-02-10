@@ -11,27 +11,33 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@repo/ui": "*",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.24",
+    "bcrypt": "^6.0.0",
     "next": "16.1.5",
+    "next-auth": "^4.24.13",
     "pg": "^8.18.0",
     "postcss": "^8.4.31",
     "prisma": "^7.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^22.15.3",
     "@types/pg": "^8.16.0",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "@types/uuid": "^11.0.0",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"
   }

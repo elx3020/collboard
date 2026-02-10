@@ -1,5 +1,6 @@
 {
   "name": "collboard",
+  "author": "elx3020",
   "private": true,
   "scripts": {
     "build": "turbo run build",
