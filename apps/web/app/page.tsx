@@ -41,7 +41,7 @@ export default function Home() {
         <div className={styles.ctas}>
           <a
             className={styles.primary}
-            href="/boards/demo-board-123"
+            href="/demo"
           >
             View WebSocket Demo
           </a>
