@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "tsx server.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production tsx server.ts",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit"
   },
@@ -19,6 +19,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.24",
     "bcrypt": "^6.0.0",
+    "ioredis": "^5.9.2",
     "next": "16.1.5",
     "next-auth": "^4.24.13",
     "pg": "^8.18.0",
@@ -26,6 +27,8 @@
     "prisma": "^7.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.1.18",
     "uuid": "^13.0.0"
   },
@@ -39,6 +42,7 @@
     "@types/react-dom": "19.2.2",
     "@types/uuid": "^11.0.0",
     "eslint": "^9.39.1",
+    "tsx": "^4.21.0",
     "typescript": "5.9.2"
   }
 }

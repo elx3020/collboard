@@ -20,6 +20,7 @@ declare module 'next-auth' {
       name?: string | null;
       image?: string | null;
     };
+    accessToken?: string;
     error?: string;
   }
 
@@ -179,6 +180,8 @@ export const authOptions: NextAuthOptions = {
           image: token.image,
         };
         session.error = token.error;
+        // Expose the session token for WebSocket authentication
+        session.accessToken = token.sub;
       }
       return session;
     },
