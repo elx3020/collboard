@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
+import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
 
 /**
  * PATCH /api/boards/[boardId]/tasks/[taskId]/move
@@ -106,6 +107,23 @@ export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, {
       },
     },
   });
+
+  // Publish real-time event
+  try {
+    await publishEvent(CHANNELS.BOARD(boardId), {
+      type: EventType.TASK_MOVED,
+      data: {
+        task: updated,
+        oldColumnId,
+        newColumnId: columnId,
+        userId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Failed to publish task moved event:', error);
+    // Don't fail the request if event publishing fails
+  }
 
   return NextResponse.json(updated);
 });

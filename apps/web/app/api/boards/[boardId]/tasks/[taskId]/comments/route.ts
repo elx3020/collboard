@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
+import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
 
 /**
  * GET /api/boards/[boardId]/tasks/[taskId]/comments
@@ -76,6 +77,21 @@ export const POST = withAuth<{ boardId: string; taskId: string }>(async (req, { 
       },
     },
   });
+
+  // Publish real-time event
+  try {
+    await publishEvent(CHANNELS.BOARD(boardId), {
+      type: EventType.COMMENT_ADDED,
+      data: {
+        comment,
+        taskId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Failed to publish comment added event:', error);
+    // Don't fail the request if event publishing fails
+  }
 
   return NextResponse.json(comment, { status: 201 });
 });

@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
+import { decode, JWTDecodeParams } from 'next-auth/jwt';
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
@@ -133,4 +134,32 @@ export async function cleanupExpiredTokens(): Promise<number> {
   });
 
   return result.count;
+}
+
+/**
+ * Verify a JWT access token from NextAuth
+ * Used for WebSocket authentication
+ */
+export async function verifyAuthToken(token: string): Promise<{ userId: string } | null> {
+  try {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      console.error('NEXTAUTH_SECRET is not set');
+      return null;
+    }
+
+    const decoded = await decode({
+      token,
+      secret,
+    });
+
+    if (!decoded || !decoded.id) {
+      return null;
+    }
+
+    return { userId: decoded.id as string };
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return null;
+  }
 }
