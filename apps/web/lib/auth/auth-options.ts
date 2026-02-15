@@ -1,4 +1,4 @@
-import type { NextAuthOptions, Session, User } from 'next-auth';
+import type { NextAuthOptions, Session } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';

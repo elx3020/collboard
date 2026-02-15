@@ -1,6 +1,7 @@
 'use client';
 
 import { signOut, useSession } from 'next-auth/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ConnectionStatus } from '@/lib/hooks/use-board-realtime';
@@ -45,9 +46,11 @@ export function Navbar() {
                                 {session.user.name || session.user.email}
                             </span>
                             {session.user.image ? (
-                                <img
+                                <Image
                                     src={session.user.image}
                                     alt=""
+                                    width={32}
+                                    height={32}
                                     className="h-8 w-8 rounded-full ring-2 ring-[var(--border)]"
                                 />
                             ) : (

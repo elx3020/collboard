@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode, type KeyboardEvent } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 
 interface ModalProps {

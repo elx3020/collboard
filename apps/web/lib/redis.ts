@@ -87,7 +87,7 @@ export function getRedisSubscriber(): Redis {
 /**
  * Publish event to Redis channel
  */
-export async function publishEvent(channel: string, event: any): Promise<void> {
+export async function publishEvent(channel: string, event: Record<string, unknown>): Promise<void> {
   try {
     const publisher = getRedisPublisher();
     await publisher.publish(channel, JSON.stringify(event));

@@ -9,10 +9,6 @@ import {
 import { boardsApi, columnsApi, tasksApi, commentsApi, membersApi } from '@/lib/api';
 import type {
   Board,
-  Column,
-  Task,
-  Comment,
-  BoardMember,
   CreateBoardRequest,
   UpdateBoardRequest,
   CreateColumnRequest,

@@ -1,13 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
-import { getRedisSubscriber, CHANNELS, EventType } from './redis';
+import { getRedisSubscriber } from './redis';
 import { verifyAuthToken } from './auth/tokens';
-
-interface AuthenticatedSocket {
-  id: string;
-  userId: string;
-  boardId?: string;
-}
 
 /**
  * Setup Socket.io server with Redis pub/sub integration
@@ -38,7 +32,7 @@ export function setupWebSocketServer(httpServer: HTTPServer): SocketIOServer {
       }
 
       // Attach user info to socket
-      (socket as any).userId = decoded.userId;
+      socket.data.userId = decoded.userId;
       
       next();
     } catch (error) {
@@ -49,7 +43,7 @@ export function setupWebSocketServer(httpServer: HTTPServer): SocketIOServer {
 
   // Connection handler
   io.on('connection', (socket) => {
-    const userId = (socket as any).userId;
+    const userId = socket.data.userId as string;
     console.log(`User connected: ${userId} (socket: ${socket.id})`);
 
     // Join board room
@@ -57,7 +51,7 @@ export function setupWebSocketServer(httpServer: HTTPServer): SocketIOServer {
       try {
         // TODO: Verify user has access to this board
         socket.join(`board:${boardId}`);
-        (socket as any).boardId = boardId;
+        socket.data.boardId = boardId;
         
         // Notify others that user joined
         socket.to(`board:${boardId}`).emit('user:joined', {
@@ -89,7 +83,7 @@ export function setupWebSocketServer(httpServer: HTTPServer): SocketIOServer {
 
     // Handle disconnect
     socket.on('disconnect', () => {
-      const boardId = (socket as any).boardId;
+      const boardId = socket.data.boardId as string | undefined;
       
       if (boardId) {
         socket.to(`board:${boardId}`).emit('user:left', {

@@ -17,17 +17,17 @@ interface WebSocketContextType {
   isConnected: boolean;
   joinBoard: (boardId: string) => void;
   leaveBoard: (boardId: string) => void;
-  on: (event: string, callback: (...args: any[]) => void) => void;
-  off: (event: string, callback?: (...args: any[]) => void) => void;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+  off: (event: string, callback?: (...args: unknown[]) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
   socket: null,
   isConnected: false,
-  joinBoard: () => {},
-  leaveBoard: () => {},
-  on: () => {},
-  off: () => {},
+  joinBoard: () => { },
+  leaveBoard: () => { },
+  on: () => { },
+  off: () => { },
 });
 
 export function useWebSocket() {
@@ -44,14 +44,16 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentBoardRef = useRef<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   // Initialize socket connection
   useEffect(() => {
     if (status === 'loading') return;
     if (status === 'unauthenticated') {
       // Clean up socket if user logs out
-      if (socket) {
-        socket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
         setSocket(null);
         setIsConnected(false);
       }
@@ -62,8 +64,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
     // Get NextAuth session token from cookies
     const getSessionToken = () => {
-      const cookieName = process.env.NODE_ENV === 'production' 
-        ? '__Secure-next-auth.session-token' 
+      const cookieName = process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.session-token'
         : 'next-auth.session-token';
       return getCookie(cookieName);
     };
@@ -111,12 +113,15 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     });
 
     setSocket(socketInstance);
+    socketRef.current = socketInstance;
 
     // Cleanup on unmount
+    const timeout = reconnectTimeoutRef.current;
     return () => {
       socketInstance.disconnect();
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
+      socketRef.current = null;
+      if (timeout) {
+        clearTimeout(timeout);
       }
     };
   }, [session, status]);
@@ -124,7 +129,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const joinBoard = useCallback(
     (boardId: string) => {
       if (!socket) return;
-      
+
       currentBoardRef.current = boardId;
       socket.emit('join:board', boardId);
       console.log(`Joining board: ${boardId}`);
@@ -135,7 +140,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const leaveBoard = useCallback(
     (boardId: string) => {
       if (!socket) return;
-      
+
       if (currentBoardRef.current === boardId) {
         currentBoardRef.current = null;
       }
@@ -146,7 +151,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   );
 
   const on = useCallback(
-    (event: string, callback: (...args: any[]) => void) => {
+    (event: string, callback: (...args: unknown[]) => void) => {
       if (!socket) return;
       socket.on(event, callback);
     },
@@ -154,7 +159,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   );
 
   const off = useCallback(
-    (event: string, callback?: (...args: any[]) => void) => {
+    (event: string, callback?: (...args: unknown[]) => void) => {
       if (!socket) return;
       if (callback) {
         socket.off(event, callback);

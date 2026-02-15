@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useWebSocket } from '../websocket-provider';
 
 /**
@@ -19,7 +19,7 @@ export enum EventType {
 }
 
 interface TaskMovedEvent {
-  task: any;
+  task: Record<string, unknown>;
   oldColumnId: string;
   newColumnId: string;
   userId: string;
@@ -27,7 +27,7 @@ interface TaskMovedEvent {
 }
 
 interface CommentAddedEvent {
-  comment: any;
+  comment: Record<string, unknown>;
   taskId: string;
   timestamp: string;
 }
@@ -40,11 +40,11 @@ interface UserPresenceEvent {
 
 interface BoardRealtimeCallbacks {
   onTaskMoved?: (event: TaskMovedEvent) => void;
-  onTaskCreated?: (task: any) => void;
-  onTaskUpdated?: (task: any) => void;
+  onTaskCreated?: (task: Record<string, unknown>) => void;
+  onTaskUpdated?: (task: Record<string, unknown>) => void;
   onTaskDeleted?: (taskId: string) => void;
   onCommentAdded?: (event: CommentAddedEvent) => void;
-  onCommentUpdated?: (comment: any) => void;
+  onCommentUpdated?: (comment: Record<string, unknown>) => void;
   onCommentDeleted?: (commentId: string) => void;
   onUserJoined?: (event: UserPresenceEvent) => void;
   onUserLeft?: (event: UserPresenceEvent) => void;
@@ -71,42 +71,42 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
   useEffect(() => {
     if (!socket || !boardId) return;
 
-    const eventHandlers: Array<[string, (...args: any[]) => void]> = [];
+    const eventHandlers: Array<[string, (...args: unknown[]) => void]> = [];
 
     // Task moved
     if (callbacks.onTaskMoved) {
       const handler = (data: TaskMovedEvent) => {
         callbacks.onTaskMoved?.(data);
       };
-      on(EventType.TASK_MOVED, handler);
-      eventHandlers.push([EventType.TASK_MOVED, handler]);
+      on(EventType.TASK_MOVED, handler as (...args: unknown[]) => void);
+      eventHandlers.push([EventType.TASK_MOVED, handler as (...args: unknown[]) => void]);
     }
 
     // Task created
     if (callbacks.onTaskCreated) {
-      const handler = (data: any) => {
+      const handler = (data: { task: Record<string, unknown> }) => {
         callbacks.onTaskCreated?.(data.task);
       };
-      on(EventType.TASK_CREATED, handler);
-      eventHandlers.push([EventType.TASK_CREATED, handler]);
+      on(EventType.TASK_CREATED, handler as (...args: unknown[]) => void);
+      eventHandlers.push([EventType.TASK_CREATED, handler as (...args: unknown[]) => void]);
     }
 
     // Task updated
     if (callbacks.onTaskUpdated) {
-      const handler = (data: any) => {
+      const handler = (data: { task: Record<string, unknown> }) => {
         callbacks.onTaskUpdated?.(data.task);
       };
-      on(EventType.TASK_UPDATED, handler);
-      eventHandlers.push([EventType.TASK_UPDATED, handler]);
+      on(EventType.TASK_UPDATED, handler as (...args: unknown[]) => void);
+      eventHandlers.push([EventType.TASK_UPDATED, handler as (...args: unknown[]) => void]);
     }
 
     // Task deleted
     if (callbacks.onTaskDeleted) {
-      const handler = (data: any) => {
+      const handler = (data: { taskId: string }) => {
         callbacks.onTaskDeleted?.(data.taskId);
       };
-      on(EventType.TASK_DELETED, handler);
-      eventHandlers.push([EventType.TASK_DELETED, handler]);
+      on(EventType.TASK_DELETED, handler as (...args: unknown[]) => void);
+      eventHandlers.push([EventType.TASK_DELETED, handler as (...args: unknown[]) => void]);
     }
 
     // Comment added
@@ -120,20 +120,20 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
 
     // Comment updated
     if (callbacks.onCommentUpdated) {
-      const handler = (data: any) => {
+      const handler = (data: { comment: Record<string, unknown> }) => {
         callbacks.onCommentUpdated?.(data.comment);
       };
-      on(EventType.COMMENT_UPDATED, handler);
-      eventHandlers.push([EventType.COMMENT_UPDATED, handler]);
+      on(EventType.COMMENT_UPDATED, handler as (...args: unknown[]) => void);
+      eventHandlers.push([EventType.COMMENT_UPDATED, handler as (...args: unknown[]) => void]);
     }
 
     // Comment deleted
     if (callbacks.onCommentDeleted) {
-      const handler = (data: any) => {
+      const handler = (data: { commentId: string }) => {
         callbacks.onCommentDeleted?.(data.commentId);
       };
-      on(EventType.COMMENT_DELETED, handler);
-      eventHandlers.push([EventType.COMMENT_DELETED, handler]);
+      on(EventType.COMMENT_DELETED, handler as (...args: unknown[]) => void);
+      eventHandlers.push([EventType.COMMENT_DELETED, handler as (...args: unknown[]) => void]);
     }
 
     // User joined

@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
-import { decode, JWTDecodeParams } from 'next-auth/jwt';
+import { decode } from 'next-auth/jwt';
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 

@@ -6,7 +6,12 @@
     "DATABASE_URL",
     "NEXTAUTH_SECRET",
     "NEXTAUTH_URL",
-    "REDIS_URL"
+    "REDIS_URL",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "PORT"
   ],
   "tasks": {
     "build": {
@@ -23,7 +28,15 @@
     },
     "lint": {
       "dependsOn": ["^lint"],
-      "env": ["NODE_ENV", "DATABASE_URL"]
+      "env": [
+        "NODE_ENV",
+        "DATABASE_URL",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "PORT"
+      ]
     },
     "check-types": {
       "dependsOn": ["^check-types"],

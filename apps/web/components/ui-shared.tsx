@@ -1,6 +1,7 @@
 'use client';
 
 import { clsx } from 'clsx';
+import Image from 'next/image';
 import type { Priority } from '@/lib/types';
 
 const priorityConfig: Record<Priority, { label: string; color: string; bgColor: string }> = {
@@ -35,12 +36,15 @@ export function Avatar({
     size?: 'sm' | 'md' | 'lg';
 }) {
     const sizeClass = { sm: 'h-6 w-6 text-xs', md: 'h-8 w-8 text-sm', lg: 'h-10 w-10 text-base' }[size];
+    const pixelSize = { sm: 24, md: 32, lg: 40 }[size];
 
     if (src) {
         return (
-            <img
+            <Image
                 src={src}
                 alt={name || ''}
+                width={pixelSize}
+                height={pixelSize}
                 className={clsx('rounded-full ring-2 ring-[var(--border)] object-cover', sizeClass)}
             />
         );
