@@ -21,26 +21,26 @@ const features = [
 
 export default function FeaturesSectionMain() {
     return (
-        <div className="overflow-hidden bg-white py-24 sm:py-32 dark:bg-gray-900">
+        <div className="overflow-hidden bg-background py-24 sm:py-32">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="mx-auto grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-2">
                     <div className="lg:pt-4 lg:pr-8">
                         <div className="lg:max-w-lg">
-                            <h2 className="text-base/7 font-semibold text-indigo-600 dark:text-indigo-400">Deploy faster</h2>
-                            <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl dark:text-white">
+                            <h2 className="text-base/7 font-semibold text-accent">Deploy faster</h2>
+                            <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-foreground sm:text-5xl">
                                 A better workflow
                             </p>
-                            <p className="mt-6 text-lg/8 text-gray-700 dark:text-gray-300">
+                            <p className="mt-6 text-lg/8 text-muted-foreground">
                                 Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores impedit perferendis suscipit eaque,
                                 iste dolor cupiditate blanditiis ratione.
                             </p>
-                            <dl className="mt-10 max-w-xl space-y-8 text-base/7 text-gray-600 lg:max-w-none dark:text-gray-400">
+                            <dl className="mt-10 max-w-xl space-y-8 text-base/7 text-muted-foreground lg:max-w-none">
                                 {features.map((feature) => (
                                     <div key={feature.name} className="relative pl-9">
-                                        <dt className="inline font-semibold text-gray-900 dark:text-white">
+                                        <dt className="inline font-semibold text-foreground">
                                             <feature.icon
                                                 aria-hidden="true"
-                                                className="absolute top-1 left-1 size-5 text-indigo-600 dark:text-indigo-400"
+                                                className="absolute top-1 left-1 size-5 text-accent"
                                             />
                                             {feature.name}
                                         </dt>{' '}
@@ -55,14 +55,14 @@ export default function FeaturesSectionMain() {
                         src="https://tailwindcss.com/plus-assets/img/component-images/dark-project-app-screenshot.png"
                         width={2432}
                         height={1442}
-                        className="w-3xl max-w-none rounded-xl shadow-xl ring-1 ring-gray-400/10 not-dark:hidden sm:w-228 md:-ml-4 lg:-ml-0 dark:ring-white/10"
+                        className="w-3xl max-w-none rounded-xl shadow-xl ring-1 ring-border not-dark:hidden sm:w-228 md:-ml-4 lg:-ml-0"
                     />
                     <img
                         alt="Product screenshot"
                         src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
                         width={2432}
                         height={1442}
-                        className="w-3xl max-w-none rounded-xl shadow-xl ring-1 ring-gray-400/10 sm:w-228 md:-ml-4 lg:-ml-0 dark:hidden dark:ring-white/10"
+                        className="w-3xl max-w-none rounded-xl shadow-xl ring-1 ring-border sm:w-228 md:-ml-4 lg:-ml-0 dark:hidden"
                     />
                 </div>
             </div>
