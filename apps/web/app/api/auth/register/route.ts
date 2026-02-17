@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, validatePasswordStrength } from '@/lib/auth/password';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/auth/register
@@ -8,6 +10,20 @@ import { hashPassword, validatePasswordStrength } from '@/lib/auth/password';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Stricter rate limit for registration: 5 req / min per IP
+    const clientIp = getClientIp(request.headers);
+    const rl = rateLimit(`register:${clientIp}`, { limit: 5, windowSeconds: 60 });
+    if (!rl.allowed) {
+      logger.warn({ ip: clientIp }, 'Register rate limit exceeded');
+      return NextResponse.json(
+        { error: 'Too many registration attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+        }
+      );
+    }
+
     const body = await request.json();
     const { email, password, name } = body;
     
@@ -74,7 +90,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error({ err: error }, 'Registration error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

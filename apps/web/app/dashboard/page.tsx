@@ -1,11 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import { useBoards, useDeleteBoard } from '@/lib/hooks/use-queries';
 import { Navbar } from '@/components/navbar';
-import { CreateBoardModal } from '@/components/create-board-modal';
 import { Spinner, EmptyState } from '@/components/ui-shared';
+
+// Lazy load the modal — only downloaded when user clicks "New Board"
+const CreateBoardModal = lazy(() =>
+    import('@/components/create-board-modal').then((m) => ({ default: m.CreateBoardModal }))
+);
 
 export default function DashboardPage() {
     const { data: boards, isLoading, error } = useBoards();
@@ -181,10 +185,12 @@ export default function DashboardPage() {
                 )}
             </main>
 
-            <CreateBoardModal
-                open={createModalOpen}
-                onClose={() => setCreateModalOpen(false)}
-            />
+            <Suspense fallback={null}>
+                <CreateBoardModal
+                    open={createModalOpen}
+                    onClose={() => setCreateModalOpen(false)}
+                />
+            </Suspense>
         </div>
     );
 }

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { CloudArrowUpIcon, LockClosedIcon, ServerIcon } from '@heroicons/react/20/solid'
 
 const features = [
@@ -50,20 +51,22 @@ export default function FeaturesSectionMain() {
                             </dl>
                         </div>
                     </div>
-                    <img
+                    {/* <Image
                         alt="Product screenshot"
                         src="https://tailwindcss.com/plus-assets/img/component-images/dark-project-app-screenshot.png"
                         width={2432}
                         height={1442}
+                        loading="lazy"
                         className="w-3xl max-w-none rounded-xl shadow-xl ring-1 ring-border not-dark:hidden sm:w-228 md:-ml-4 lg:-ml-0"
                     />
-                    <img
+                    <Image
                         alt="Product screenshot"
                         src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
                         width={2432}
                         height={1442}
+                        loading="lazy"
                         className="w-3xl max-w-none rounded-xl shadow-xl ring-1 ring-border sm:w-228 md:-ml-4 lg:-ml-0 dark:hidden"
-                    />
+                    /> */}
                 </div>
             </div>
         </div>

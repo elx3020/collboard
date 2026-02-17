@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, lazy, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -17,8 +17,6 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Navbar } from '@/components/navbar';
 import { BoardColumn } from '@/components/board/board-column';
 import { TaskCardOverlay } from '@/components/board/task-card';
-import { TaskDetailModal } from '@/components/board/task-detail-modal';
-import { CreateTaskModal } from '@/components/create-task-modal';
 import { Spinner, EmptyState } from '@/components/ui-shared';
 import {
   useBoard,
@@ -32,6 +30,14 @@ import { useBoardRealtime, ConnectionStatus } from '@/lib/hooks/use-board-realti
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/hooks/use-queries';
 import type { Task, Column } from '@/lib/types';
+
+// Lazy load heavy modals — only loaded when opened
+const TaskDetailModal = lazy(() =>
+  import('@/components/board/task-detail-modal').then((m) => ({ default: m.TaskDetailModal }))
+);
+const CreateTaskModal = lazy(() =>
+  import('@/components/create-task-modal').then((m) => ({ default: m.CreateTaskModal }))
+);
 
 export default function BoardPage() {
   const params = useParams<{ boardId: string }>();
@@ -361,24 +367,28 @@ export default function BoardPage() {
         </DndContext>
       </div>
 
-      {/* Task Detail Modal */}
+      {/* Task Detail Modal (lazy loaded) */}
       {selectedTask && (
-        <TaskDetailModal
-          open={taskModalOpen}
-          onClose={closeTaskModal}
-          task={selectedTask}
-          boardId={boardId}
-        />
+        <Suspense fallback={null}>
+          <TaskDetailModal
+            open={taskModalOpen}
+            onClose={closeTaskModal}
+            task={selectedTask}
+            boardId={boardId}
+          />
+        </Suspense>
       )}
 
-      {/* Create Task Modal */}
+      {/* Create Task Modal (lazy loaded) */}
       {createTaskColumnId && (
-        <CreateTaskModal
-          open={createTaskModalOpen}
-          onClose={closeCreateTaskModal}
-          boardId={boardId}
-          columnId={createTaskColumnId}
-        />
+        <Suspense fallback={null}>
+          <CreateTaskModal
+            open={createTaskModalOpen}
+            onClose={closeCreateTaskModal}
+            boardId={boardId}
+            columnId={createTaskColumnId}
+          />
+        </Suspense>
       )}
     </div>
   );

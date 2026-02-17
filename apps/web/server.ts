@@ -3,6 +3,7 @@ import { parse } from 'url';
 import next from 'next';
 import { setupWebSocketServer, setSocketIOInstance } from './lib/websocket';
 import { closeRedisConnections } from './lib/redis';
+import { logger } from './lib/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -14,6 +15,7 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
+    const start = Date.now();
     try {
       // Parse URL
       const parsedUrl = parse(req.url!, true);
@@ -21,9 +23,23 @@ app.prepare().then(() => {
       // Handle Next.js requests
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error('Error handling request:', err);
+      logger.error({ err, url: req.url }, 'Error handling request');
       res.statusCode = 500;
       res.end('Internal Server Error');
+    } finally {
+      const duration = Date.now() - start;
+      // Only log API/page requests, skip static asset noise
+      if (req.url && !req.url.startsWith('/_next/') && !req.url.startsWith('/favicon')) {
+        logger.info(
+          {
+            method: req.method,
+            url: req.url,
+            status: res.statusCode,
+            duration,
+          },
+          'request'
+        );
+      }
     }
   });
 
@@ -33,32 +49,32 @@ app.prepare().then(() => {
 
   // Start server
   httpServer.listen(port, () => {
-    console.log(`> Ready on http://${hostname}:${port}`);
-    console.log(`> WebSocket server ready`);
+    logger.info(`> Ready on http://${hostname}:${port}`);
+    logger.info('> WebSocket server ready');
   });
 
   // Graceful shutdown
   const shutdown = async () => {
-    console.log('\nShutting down gracefully...');
+    logger.info('Shutting down gracefully...');
     
     // Close Socket.io connections
     io.close(() => {
-      console.log('Socket.io server closed');
+      logger.info('Socket.io server closed');
     });
 
     // Close Redis connections
     await closeRedisConnections();
-    console.log('Redis connections closed');
+    logger.info('Redis connections closed');
 
     // Close HTTP server
     httpServer.close(() => {
-      console.log('HTTP server closed');
+      logger.info('HTTP server closed');
       process.exit(0);
     });
 
     // Force exit after timeout
     setTimeout(() => {
-      console.error('Forced shutdown after timeout');
+      logger.error('Forced shutdown after timeout');
       process.exit(1);
     }, 10000);
   };

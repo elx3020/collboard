@@ -91,6 +91,9 @@ model RefreshToken {
   @@index([userId])
   @@index([token])
   @@index([family])
+  @@index([userId, revokedAt])
+  @@index([family, revokedAt])
+  @@index([expiresAt])
 }
 
 // Board model - represents a Kanban board
@@ -181,6 +184,7 @@ model Comment {
   
   @@index([taskId])
   @@index([userId])
+  @@index([taskId, createdAt])
 }
 
 // Enums

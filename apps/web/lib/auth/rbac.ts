@@ -69,29 +69,29 @@ export function hasPermission(userRole: Role, permission: Permission): boolean {
 /**
  * Get the user's role on a specific board.
  * Returns the role if the user is a member or owner, null otherwise.
+ *
+ * Optimized: single query instead of two sequential lookups.
  */
 export async function getUserBoardRole(
   userId: string,
   boardId: string
 ): Promise<Role | null> {
-  // Check if user is the board owner
   const board = await prisma.board.findUnique({
     where: { id: boardId },
-    select: { ownerId: true },
+    select: {
+      ownerId: true,
+      members: {
+        where: { userId },
+        select: { role: true },
+        take: 1,
+      },
+    },
   });
 
   if (!board) return null;
   if (board.ownerId === userId) return 'OWNER';
 
-  // Check board membership
-  const membership = await prisma.boardMember.findUnique({
-    where: {
-      boardId_userId: { boardId, userId },
-    },
-    select: { role: true },
-  });
-
-  return membership?.role ?? null;
+  return (board.members[0]?.role as Role) ?? null;
 }
 
 /**

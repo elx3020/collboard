@@ -42,6 +42,10 @@
       "dependsOn": ["^check-types"],
       "env": ["NODE_ENV", "DATABASE_URL"]
     },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": ["NODE_ENV", "DATABASE_URL"]
+    },
     "dev": {
       "cache": false,
       "persistent": true,

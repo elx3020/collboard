@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/auth-options';
 import { AuthorizationError } from '@/lib/auth/rbac';
 import { UnauthorizedError } from '@/lib/auth/session';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type RouteHandler<P extends Record<string, string> = Record<string, string>> = (
@@ -33,6 +35,23 @@ export function withAuth<P extends Record<string, string> = Record<string, strin
     context?: { params: any }
   ) => {
     try {
+      // ── Rate limiting (per-IP, 60 req/min) ──
+      const clientIp = getClientIp(req.headers);
+      const rl = rateLimit(`api:${clientIp}`, { limit: 60, windowSeconds: 60 });
+      if (!rl.allowed) {
+        logger.warn({ ip: clientIp, path: req.nextUrl.pathname }, 'Rate limit exceeded');
+        return NextResponse.json(
+          { error: 'Too many requests. Please try again later.' },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+              'X-RateLimit-Remaining': '0',
+            },
+          }
+        );
+      }
+
       const session = await getServerSession(authOptions);
 
       if (!session?.user?.id) {
@@ -73,7 +92,7 @@ export function withAuth<P extends Record<string, string> = Record<string, strin
         );
       }
 
-      console.error('API route error:', error);
+      logger.error({ err: error, path: req.nextUrl.pathname }, 'API route error');
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

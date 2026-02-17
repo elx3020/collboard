@@ -18,11 +18,14 @@ export const GET = withAuth(async (_req, { userId }) => {
       owner: {
         select: { id: true, name: true, email: true, image: true },
       },
+      // Only fetch the current user's membership (not all members)
       members: {
+        where: { userId },
         select: { userId: true, role: true },
+        take: 1,
       },
       _count: {
-        select: { columns: true },
+        select: { columns: true, members: true },
       },
     },
     orderBy: { updatedAt: 'desc' },
@@ -33,7 +36,7 @@ export const GET = withAuth(async (_req, { userId }) => {
     const role =
       board.ownerId === userId
         ? 'OWNER'
-        : board.members.find((m) => m.userId === userId)?.role ?? 'VIEWER';
+        : board.members[0]?.role ?? 'VIEWER';
     return { ...board, currentUserRole: role };
   });
 
