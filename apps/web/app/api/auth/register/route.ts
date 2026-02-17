@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password, name } = body;
-
+    
     // Validate required fields
     if (!email || !password) {
       return NextResponse.json(
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
     if (!passwordValidation.valid) {
@@ -36,12 +36,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
-
+    
     if (existingUser) {
       return NextResponse.json(
         { error: 'An account with this email already exists' },
@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
 
     // Hash the password
     const hashedPassword = await hashPassword(password);
-
     // Create the user
     const user = await prisma.user.create({
       data: {

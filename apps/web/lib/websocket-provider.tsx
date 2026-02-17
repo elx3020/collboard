@@ -10,7 +10,6 @@ import React, {
 } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
-import { getCookie } from './utils/cookies';
 
 interface WebSocketContextType {
   socket: Socket | null;
@@ -62,64 +61,77 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
     if (!session?.user?.id) return;
 
-    // Get NextAuth session token from cookies
-    const getSessionToken = () => {
-      const cookieName = process.env.NODE_ENV === 'production'
-        ? '__Secure-next-auth.session-token'
-        : 'next-auth.session-token';
-      return getCookie(cookieName);
+    // Fetch session token from the server (httpOnly cookies can't be read client-side)
+    const fetchWsToken = async (): Promise<string | null> => {
+      try {
+        const res = await fetch('/api/auth/ws-token');
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.token ?? null;
+      } catch {
+        console.error('Failed to fetch WebSocket auth token');
+        return null;
+      }
     };
 
-    const token = getSessionToken();
-    if (!token) {
-      console.error('No session token found');
-      return;
-    }
+    let cancelled = false;
 
-    // Create socket connection
-    const socketInstance = io({
-      auth: {
-        token,
-      },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-    });
-
-    socketInstance.on('connect', () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-
-      // Rejoin current board if any
-      if (currentBoardRef.current) {
-        socketInstance.emit('join:board', currentBoardRef.current);
+    fetchWsToken().then((token) => {
+      if (cancelled || !token) {
+        if (!cancelled && !token) {
+          console.error('No session token found');
+        }
+        return;
       }
-    });
 
-    socketInstance.on('disconnect', (reason) => {
-      console.log('WebSocket disconnected:', reason);
-      setIsConnected(false);
-    });
+      // Create socket connection
+      const socketInstance = io({
+        auth: {
+          token,
+        },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+      });
 
-    socketInstance.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
-      setIsConnected(false);
-    });
+      socketInstance.on('connect', () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
 
-    socketInstance.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
+        // Rejoin current board if any
+        if (currentBoardRef.current) {
+          socketInstance.emit('join:board', currentBoardRef.current);
+        }
+      });
 
-    setSocket(socketInstance);
-    socketRef.current = socketInstance;
+      socketInstance.on('disconnect', (reason) => {
+        console.log('WebSocket disconnected:', reason);
+        setIsConnected(false);
+      });
+
+      socketInstance.on('connect_error', (error) => {
+        console.error('WebSocket connection error:', error);
+        setIsConnected(false);
+      });
+
+      socketInstance.on('error', (error) => {
+        console.error('WebSocket error:', error);
+      });
+
+      setSocket(socketInstance);
+      socketRef.current = socketInstance;
+    });
 
     // Cleanup on unmount
     const timeout = reconnectTimeoutRef.current;
     return () => {
-      socketInstance.disconnect();
-      socketRef.current = null;
+      cancelled = true;
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
       if (timeout) {
         clearTimeout(timeout);
       }
