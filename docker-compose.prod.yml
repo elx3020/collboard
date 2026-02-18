@@ -1,0 +1,92 @@
+# ╔═══════════════════════════════════════════════════════════════════════════════╗
+# ║  Production Docker Compose — Collboard                                      ║
+# ║                                                                             ║
+# ║  Usage:                                                                     ║
+# ║    1. Copy .env.example → .env and fill in values                           ║
+# ║    2. docker compose -f docker-compose.prod.yml run --rm migrate            ║
+# ║    3. docker compose -f docker-compose.prod.yml up -d                       ║
+# ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+services:
+  # ── Web Application ───────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: ghcr.io/${GHCR_IMAGE:-collboard/web}:${IMAGE_TAG:-latest}
+    container_name: collboard-web
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://collboard:${DB_PASSWORD}@postgres:5432/collboard?schema=public"
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
+      NEXTAUTH_URL: "${NEXTAUTH_URL}"
+      REDIS_URL: "redis://redis:6379"
+      GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID:-}"
+      GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: collboard-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: collboard
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: collboard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: collboard-redis-prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Database Migration (one-off) ─────────────────────────────────────────
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    container_name: collboard-migrate
+    environment:
+      DATABASE_URL: "postgresql://collboard:${DB_PASSWORD}@postgres:5432/collboard?schema=public"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "cd apps/web && npx prisma migrate deploy"
+    restart: "no"
+
+volumes:
+  pgdata:
+  redisdata:

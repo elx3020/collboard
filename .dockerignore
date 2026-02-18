@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+.turbo
+dist
+out
+coverage
+
+# Git
+.git
+.gitignore
+
+# Environment files (secrets must NOT be baked into images)
+.env
+.env.*
+!.env.example
+
+# IDE / tooling
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing / reports
+playwright-report
+test-results
+coverage
+
+# Documentation
+*.md
+LICENSE
+
+# Husky hooks
+.husky
+
+# OS files
+.DS_Store
+Thumbs.db

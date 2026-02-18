@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for Docker deployments
+  // Produces a minimal self-contained build in .next/standalone
+  output: 'standalone',
+
   // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],

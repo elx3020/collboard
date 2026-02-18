@@ -1,0 +1,87 @@
+# ╔═══════════════════════════════════════════════════════════════════════════════╗
+# ║  Local Docker Compose — for testing the production image locally            ║
+# ║                                                                             ║
+# ║  Usage:                                                                     ║
+# ║    docker compose -f docker-compose.local.yml up --build                    ║
+# ║                                                                             ║
+# ║  First-time setup (run migrations):                                         ║
+# ║    docker compose -f docker-compose.local.yml up -d postgres redis          ║
+# ║    docker compose -f docker-compose.local.yml run --rm migrate              ║
+# ║    docker compose -f docker-compose.local.yml up --build -d web             ║
+# ║                                                                             ║
+# ║  Cleanup:                                                                   ║
+# ║    docker compose -f docker-compose.local.yml down -v                       ║
+# ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+services:
+  # ── Web Application (production image) ────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: collboard-web-local
+    ports:
+      - "3000:3000"
+    env_file:
+      - apps/web/.env.docker.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  # Port 5433 on host to avoid conflict with local dev postgres on 5432
+  postgres:
+    image: postgres:16-alpine
+    container_name: collboard-postgres-local
+    environment:
+      POSTGRES_USER: collboard
+      POSTGRES_PASSWORD: localpassword123
+      POSTGRES_DB: collboard
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collboard"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  # Port 6380 on host to avoid conflict with local dev redis on 6379
+  redis:
+    image: redis:7-alpine
+    container_name: collboard-redis-local
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Database Migration (one-off) ─────────────────────────────────────────
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    container_name: collboard-migrate-local
+    environment:
+      DATABASE_URL: postgresql://collboard:localpassword123@postgres:5432/collboard?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "cd apps/web && npx prisma migrate deploy"
+    restart: "no"
+
+volumes:
+  pgdata_local:
