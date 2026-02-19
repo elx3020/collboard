@@ -16,8 +16,8 @@ interface WebSocketContextType {
   isConnected: boolean;
   joinBoard: (boardId: string) => void;
   leaveBoard: (boardId: string) => void;
-  on: (event: string, callback: (...args: unknown[]) => void) => void;
-  off: (event: string, callback?: (...args: unknown[]) => void) => void;
+  on: <T>(event: string, callback: (data: T) => void) => void;
+  off: <T>(event: string, callback?: (data: T) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -163,7 +163,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   );
 
   const on = useCallback(
-    (event: string, callback: (...args: unknown[]) => void) => {
+    <T,>(event: string, callback: (data: T) => void) => {
       if (!socket) return;
       socket.on(event, callback);
     },
@@ -171,7 +171,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   );
 
   const off = useCallback(
-    (event: string, callback?: (...args: unknown[]) => void) => {
+    <T,>(event: string, callback?: (data: T) => void) => {
       if (!socket) return;
       if (callback) {
         socket.off(event, callback);

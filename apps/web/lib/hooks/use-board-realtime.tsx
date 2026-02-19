@@ -71,15 +71,15 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
   useEffect(() => {
     if (!socket || !boardId) return;
 
-    const eventHandlers: Array<[string, (...args: unknown[]) => void]> = [];
+    const cleanupFns: Array<() => void> = [];
 
     // Task moved
     if (callbacks.onTaskMoved) {
       const handler = (data: TaskMovedEvent) => {
         callbacks.onTaskMoved?.(data);
       };
-      on(EventType.TASK_MOVED, handler as (...args: unknown[]) => void);
-      eventHandlers.push([EventType.TASK_MOVED, handler as (...args: unknown[]) => void]);
+      on<TaskMovedEvent>(EventType.TASK_MOVED, handler);
+      cleanupFns.push(() => off<TaskMovedEvent>(EventType.TASK_MOVED, handler));
     }
 
     // Task created
@@ -87,8 +87,8 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: { task: Record<string, unknown> }) => {
         callbacks.onTaskCreated?.(data.task);
       };
-      on(EventType.TASK_CREATED, handler as (...args: unknown[]) => void);
-      eventHandlers.push([EventType.TASK_CREATED, handler as (...args: unknown[]) => void]);
+      on<{ task: Record<string, unknown> }>(EventType.TASK_CREATED, handler);
+      cleanupFns.push(() => off<{ task: Record<string, unknown> }>(EventType.TASK_CREATED, handler));
     }
 
     // Task updated
@@ -96,8 +96,8 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: { task: Record<string, unknown> }) => {
         callbacks.onTaskUpdated?.(data.task);
       };
-      on(EventType.TASK_UPDATED, handler as (...args: unknown[]) => void);
-      eventHandlers.push([EventType.TASK_UPDATED, handler as (...args: unknown[]) => void]);
+      on<{ task: Record<string, unknown> }>(EventType.TASK_UPDATED, handler);
+      cleanupFns.push(() => off<{ task: Record<string, unknown> }>(EventType.TASK_UPDATED, handler));
     }
 
     // Task deleted
@@ -105,8 +105,8 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: { taskId: string }) => {
         callbacks.onTaskDeleted?.(data.taskId);
       };
-      on(EventType.TASK_DELETED, handler as (...args: unknown[]) => void);
-      eventHandlers.push([EventType.TASK_DELETED, handler as (...args: unknown[]) => void]);
+      on<{ taskId: string }>(EventType.TASK_DELETED, handler);
+      cleanupFns.push(() => off<{ taskId: string }>(EventType.TASK_DELETED, handler));
     }
 
     // Comment added
@@ -114,8 +114,8 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: CommentAddedEvent) => {
         callbacks.onCommentAdded?.(data);
       };
-      on(EventType.COMMENT_ADDED, handler);
-      eventHandlers.push([EventType.COMMENT_ADDED, handler]);
+      on<CommentAddedEvent>(EventType.COMMENT_ADDED, handler);
+      cleanupFns.push(() => off<CommentAddedEvent>(EventType.COMMENT_ADDED, handler));
     }
 
     // Comment updated
@@ -123,8 +123,8 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: { comment: Record<string, unknown> }) => {
         callbacks.onCommentUpdated?.(data.comment);
       };
-      on(EventType.COMMENT_UPDATED, handler as (...args: unknown[]) => void);
-      eventHandlers.push([EventType.COMMENT_UPDATED, handler as (...args: unknown[]) => void]);
+      on<{ comment: Record<string, unknown> }>(EventType.COMMENT_UPDATED, handler);
+      cleanupFns.push(() => off<{ comment: Record<string, unknown> }>(EventType.COMMENT_UPDATED, handler));
     }
 
     // Comment deleted
@@ -132,8 +132,8 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: { commentId: string }) => {
         callbacks.onCommentDeleted?.(data.commentId);
       };
-      on(EventType.COMMENT_DELETED, handler as (...args: unknown[]) => void);
-      eventHandlers.push([EventType.COMMENT_DELETED, handler as (...args: unknown[]) => void]);
+      on<{ commentId: string }>(EventType.COMMENT_DELETED, handler);
+      cleanupFns.push(() => off<{ commentId: string }>(EventType.COMMENT_DELETED, handler));
     }
 
     // User joined
@@ -141,8 +141,8 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: UserPresenceEvent) => {
         callbacks.onUserJoined?.(data);
       };
-      on(EventType.USER_JOINED, handler);
-      eventHandlers.push([EventType.USER_JOINED, handler]);
+      on<UserPresenceEvent>(EventType.USER_JOINED, handler);
+      cleanupFns.push(() => off<UserPresenceEvent>(EventType.USER_JOINED, handler));
     }
 
     // User left
@@ -150,15 +150,13 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
       const handler = (data: UserPresenceEvent) => {
         callbacks.onUserLeft?.(data);
       };
-      on(EventType.USER_LEFT, handler);
-      eventHandlers.push([EventType.USER_LEFT, handler]);
+      on<UserPresenceEvent>(EventType.USER_LEFT, handler);
+      cleanupFns.push(() => off<UserPresenceEvent>(EventType.USER_LEFT, handler));
     }
 
     // Cleanup event listeners
     return () => {
-      eventHandlers.forEach(([event, handler]) => {
-        off(event, handler);
-      });
+      cleanupFns.forEach(fn => fn());
     };
   }, [socket, boardId, callbacks, on, off]);
 }

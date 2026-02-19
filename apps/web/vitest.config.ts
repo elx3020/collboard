@@ -11,10 +11,6 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.{ts,tsx}'],
-    // Use environmentMatchGlobs so component tests automatically get jsdom
-    environmentMatchGlobs: [
-      ['tests/components/**', 'happy-dom'],
-    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
