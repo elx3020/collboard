@@ -23,7 +23,9 @@
         "DATABASE_URL",
         "NEXTAUTH_SECRET",
         "NEXTAUTH_URL",
-        "REDIS_URL"
+        "REDIS_URL",
+        "HOSTNAME",
+        "PORT"
       ]
     },
     "lint": {

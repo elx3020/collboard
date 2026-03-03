@@ -1,3 +1,48 @@
+// ─── Real-time Event Types ─────────────────────────────────────────────────────
+
+/**
+ * Event types for real-time updates (shared between server and client)
+ */
+export enum EventType {
+  TASK_MOVED = 'task:moved',
+  TASK_CREATED = 'task:created',
+  TASK_UPDATED = 'task:updated',
+  TASK_DELETED = 'task:deleted',
+  COMMENT_ADDED = 'comment:added',
+  COMMENT_UPDATED = 'comment:updated',
+  COMMENT_DELETED = 'comment:deleted',
+  USER_JOINED = 'user:joined',
+  USER_LEFT = 'user:left',
+}
+
+/**
+ * Channel name helpers for Redis pub/sub
+ */
+export const CHANNELS = {
+  BOARD: (boardId: string) => `board:${boardId}`,
+  TASK_MOVED: (boardId: string) => `board:${boardId}:task-moved`,
+  COMMENT_ADDED: (boardId: string) => `board:${boardId}:comment-added`,
+  USER_PRESENCE: (boardId: string) => `board:${boardId}:presence`,
+};
+
+// ─── WebSocket Message Types ───────────────────────────────────────────────────
+
+/**
+ * Messages sent from the client to the WS server
+ */
+export type WsClientMessage =
+  | { type: 'join:board'; data: { boardId: string } }
+  | { type: 'leave:board'; data: { boardId: string } }
+  | { type: 'ping' };
+
+/**
+ * Messages sent from the WS server to the client
+ */
+export type WsServerMessage =
+  | { type: EventType; data: Record<string, unknown> }
+  | { type: 'pong' }
+  | { type: 'error'; data: { message: string } };
+
 // ─── Shared Types ──────────────────────────────────────────────────────────────
 
 export type Role = 'OWNER' | 'EDITOR' | 'VIEWER';

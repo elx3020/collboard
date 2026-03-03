@@ -2,21 +2,7 @@
 
 import { useEffect } from 'react';
 import { useWebSocket } from '../websocket-provider';
-
-/**
- * Event types from the server
- */
-export enum EventType {
-  TASK_MOVED = 'task:moved',
-  TASK_CREATED = 'task:created',
-  TASK_UPDATED = 'task:updated',
-  TASK_DELETED = 'task:deleted',
-  COMMENT_ADDED = 'comment:added',
-  COMMENT_UPDATED = 'comment:updated',
-  COMMENT_DELETED = 'comment:deleted',
-  USER_JOINED = 'user:joined',
-  USER_LEFT = 'user:left',
-}
+import { EventType } from '../types';
 
 interface TaskMovedEvent {
   task: Record<string, unknown>;
@@ -54,7 +40,7 @@ interface BoardRealtimeCallbacks {
  * Hook for subscribing to real-time board events
  */
 export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtimeCallbacks) {
-  const { socket, isConnected, joinBoard, leaveBoard, on, off } = useWebSocket();
+  const { isConnected, joinBoard, leaveBoard, on, off } = useWebSocket();
 
   // Join/leave board on mount/unmount
   useEffect(() => {
@@ -69,7 +55,7 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
 
   // Setup event listeners
   useEffect(() => {
-    if (!socket || !boardId) return;
+    if (!isConnected || !boardId) return;
 
     const cleanupFns: Array<() => void> = [];
 
@@ -158,7 +144,7 @@ export function useBoardRealtime(boardId: string | null, callbacks: BoardRealtim
     return () => {
       cleanupFns.forEach(fn => fn());
     };
-  }, [socket, boardId, callbacks, on, off]);
+  }, [isConnected, boardId, callbacks, on, off]);
 }
 
 /**

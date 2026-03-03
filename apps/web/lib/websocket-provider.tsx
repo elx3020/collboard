@@ -8,20 +8,22 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
+import type { WsClientMessage, WsServerMessage } from './types';
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+type EventCallback = (data: any) => void;
 
 interface WebSocketContextType {
-  socket: Socket | null;
   isConnected: boolean;
   joinBoard: (boardId: string) => void;
   leaveBoard: (boardId: string) => void;
-  on: <T>(event: string, callback: (data: T) => void) => void;
-  off: <T>(event: string, callback?: (data: T) => void) => void;
+  on: <T = unknown>(event: string, callback: (data: T) => void) => void;
+  off: <T = unknown>(event: string, callback?: (data: T) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
-  socket: null,
   isConnected: false,
   joinBoard: () => { },
   leaveBoard: () => { },
@@ -33,27 +35,140 @@ export function useWebSocket() {
   return useContext(WebSocketContext);
 }
 
+// ─── Configuration ─────────────────────────────────────────────────────────────
+
+const WS_PORT = process.env.NEXT_PUBLIC_WS_PORT || '3002';
+
+const MAX_RECONNECT_ATTEMPTS = 10;
+const INITIAL_RECONNECT_DELAY = 1_000;
+const MAX_RECONNECT_DELAY = 10_000;
+
+// ─── Provider ──────────────────────────────────────────────────────────────────
+
 interface WebSocketProviderProps {
   children: React.ReactNode;
 }
 
 export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const { data: session, status } = useSession();
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const currentBoardRef = useRef<string | null>(null);
-  const socketRef = useRef<Socket | null>(null);
 
-  // Initialize socket connection
+  // Refs for stable state across re-renders
+  const wsRef = useRef<WebSocket | null>(null);
+  const currentBoardRef = useRef<string | null>(null);
+  const listenersRef = useRef<Map<string, Set<EventCallback>>>(new Map());
+  const reconnectAttemptRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  // ── Internal helpers ──────────────────────────────────────────────────────
+
+  const sendMessage = useCallback((msg: WsClientMessage) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+    }
+  }, []);
+
+  const dispatchEvent = useCallback((type: string, data: unknown) => {
+    const cbs = listenersRef.current.get(type);
+    if (cbs) {
+      for (const cb of cbs) cb(data);
+    }
+  }, []);
+
+  // ── Connection lifecycle ──────────────────────────────────────────────────
+
+  const connect = useCallback(
+    (token: string) => {
+      if (!mountedRef.current) return;
+
+      // Determine WebSocket URL
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const host = window.location.hostname;
+      const url = `${protocol}://${host}:${WS_PORT}?token=${encodeURIComponent(token)}`;
+
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        if (!mountedRef.current) return;
+        reconnectAttemptRef.current = 0;
+        setIsConnected(true);
+        console.log('WebSocket connected');
+
+        // Re-join current board on reconnect
+        if (currentBoardRef.current) {
+          sendMessage({ type: 'join:board', data: { boardId: currentBoardRef.current } });
+        }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg: WsServerMessage = JSON.parse(event.data);
+
+          if (msg.type === 'pong') return; // heartbeat ack
+
+          if ('data' in msg) {
+            dispatchEvent(msg.type, msg.data);
+          }
+        } catch {
+          console.error('Failed to parse WS message');
+        }
+      };
+
+      ws.onclose = (event) => {
+        if (!mountedRef.current) return;
+        setIsConnected(false);
+        console.log('WebSocket disconnected:', event.code, event.reason);
+
+        // Schedule reconnection unless it was a clean close
+        if (event.code !== 1000) {
+          scheduleReconnect(token);
+        }
+      };
+
+      ws.onerror = () => {
+        // onclose will fire after this — reconnection handled there
+      };
+    },
+    [sendMessage, dispatchEvent],
+  );
+
+  const scheduleReconnect = useCallback(
+    (token: string) => {
+      if (!mountedRef.current) return;
+      if (reconnectAttemptRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        console.error('Max WebSocket reconnect attempts reached');
+        return;
+      }
+
+      const delay = Math.min(
+        INITIAL_RECONNECT_DELAY * 2 ** reconnectAttemptRef.current,
+        MAX_RECONNECT_DELAY,
+      );
+
+      reconnectAttemptRef.current += 1;
+
+      reconnectTimerRef.current = setTimeout(() => {
+        console.log(`WebSocket reconnect attempt ${reconnectAttemptRef.current}`);
+        connect(token);
+      }, delay);
+    },
+    [connect],
+  );
+
+  // ── Initialise/teardown ───────────────────────────────────────────────────
+
   useEffect(() => {
+    mountedRef.current = true;
+
     if (status === 'loading') return;
+
     if (status === 'unauthenticated') {
-      // Clean up socket if user logs out
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setSocket(null);
+      if (wsRef.current) {
+        wsRef.current.close(1000, 'logout');
+        wsRef.current = null;
         setIsConnected(false);
       }
       return;
@@ -61,129 +176,74 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
     if (!session?.user?.id) return;
 
-    // Fetch session token from the server (httpOnly cookies can't be read client-side)
-    const fetchWsToken = async (): Promise<string | null> => {
-      try {
-        const res = await fetch('/api/auth/ws-token');
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data.token ?? null;
-      } catch {
-        console.error('Failed to fetch WebSocket auth token');
-        return null;
-      }
-    };
-
     let cancelled = false;
 
-    fetchWsToken().then((token) => {
-      if (cancelled || !token) {
-        if (!cancelled && !token) {
-          console.error('No session token found');
-        }
-        return;
-      }
-
-      // Create socket connection
-      const socketInstance = io({
-        auth: {
-          token,
-        },
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: 5,
-      });
-
-      socketInstance.on('connect', () => {
-        console.log('WebSocket connected');
-        setIsConnected(true);
-
-        // Rejoin current board if any
-        if (currentBoardRef.current) {
-          socketInstance.emit('join:board', currentBoardRef.current);
-        }
-      });
-
-      socketInstance.on('disconnect', (reason) => {
-        console.log('WebSocket disconnected:', reason);
-        setIsConnected(false);
-      });
-
-      socketInstance.on('connect_error', (error) => {
-        console.error('WebSocket connection error:', error);
-        setIsConnected(false);
-      });
-
-      socketInstance.on('error', (error) => {
-        console.error('WebSocket error:', error);
-      });
-
-      setSocket(socketInstance);
-      socketRef.current = socketInstance;
-    });
-
-    // Cleanup on unmount
-    const timeout = reconnectTimeoutRef.current;
-    return () => {
-      cancelled = true;
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      if (timeout) {
-        clearTimeout(timeout);
+    const fetchTokenAndConnect = async () => {
+      try {
+        const res = await fetch('/api/auth/ws-token');
+        if (!res.ok) return;
+        const data = await res.json();
+        const token = data.token as string | undefined;
+        if (cancelled || !token) return;
+        connect(token);
+      } catch {
+        console.error('Failed to fetch WebSocket auth token');
       }
     };
-  }, [session, status]);
+
+    fetchTokenAndConnect();
+
+    return () => {
+      cancelled = true;
+      mountedRef.current = false;
+
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+
+      if (wsRef.current) {
+        wsRef.current.close(1000, 'cleanup');
+        wsRef.current = null;
+      }
+    };
+  }, [session, status, connect]);
+
+  // ── Public API ────────────────────────────────────────────────────────────
 
   const joinBoard = useCallback(
     (boardId: string) => {
-      if (!socket) return;
-
       currentBoardRef.current = boardId;
-      socket.emit('join:board', boardId);
+      sendMessage({ type: 'join:board', data: { boardId } });
       console.log(`Joining board: ${boardId}`);
     },
-    [socket]
+    [sendMessage],
   );
 
   const leaveBoard = useCallback(
     (boardId: string) => {
-      if (!socket) return;
-
       if (currentBoardRef.current === boardId) {
         currentBoardRef.current = null;
       }
-      socket.emit('leave:board', boardId);
+      sendMessage({ type: 'leave:board', data: { boardId } });
       console.log(`Leaving board: ${boardId}`);
     },
-    [socket]
+    [sendMessage],
   );
 
-  const on = useCallback(
-    <T,>(event: string, callback: (data: T) => void) => {
-      if (!socket) return;
-      socket.on(event, callback);
-    },
-    [socket]
-  );
+  const on = useCallback(<T,>(event: string, callback: (data: T) => void) => {
+    if (!listenersRef.current.has(event)) {
+      listenersRef.current.set(event, new Set());
+    }
+    listenersRef.current.get(event)!.add(callback as EventCallback);
+  }, []);
 
-  const off = useCallback(
-    <T,>(event: string, callback?: (data: T) => void) => {
-      if (!socket) return;
-      if (callback) {
-        socket.off(event, callback);
-      } else {
-        socket.off(event);
-      }
-    },
-    [socket]
-  );
+  const off = useCallback(<T,>(event: string, callback?: (data: T) => void) => {
+    if (!callback) {
+      listenersRef.current.delete(event);
+    } else {
+      listenersRef.current.get(event)?.delete(callback as EventCallback);
+    }
+  }, []);
 
   const value: WebSocketContextType = {
-    socket,
     isConnected,
     joinBoard,
     leaveBoard,

@@ -10,7 +10,7 @@ export default function DemoPage() {
             🎉 WebSocket Integration Complete!
           </h1>
           <p className="text-xl text-gray-600 mb-6">
-            Real-time collaboration features powered by Socket.io and Redis pub/sub
+            Real-time collaboration features powered by WebSocket and Redis pub/sub
           </p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-lg">
@@ -124,9 +124,9 @@ export default function DemoPage() {
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">Socket.io</h3>
+              <h3 className="font-bold text-gray-900 mb-2">WebSocket (ws)</h3>
               <p className="text-gray-600 text-sm">
-                WebSocket server for bidirectional real-time communication with fallback to polling
+                Lightweight WebSocket server for bidirectional real-time communication
               </p>
             </div>
             <div>
@@ -136,9 +136,9 @@ export default function DemoPage() {
               </p>
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">Custom Server</h3>
+              <h3 className="font-bold text-gray-900 mb-2">Standalone Output</h3>
               <p className="text-gray-600 text-sm">
-                Next.js integrated with Socket.io server using custom server.ts
+                Next.js standalone build with a separate ws-server process for minimal Docker images
               </p>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function DemoPage() {
             💻 Usage Example
           </h2>
           <pre className="text-sm text-gray-100">
-{`// Client-side hook
+            {`// Client-side hook
 import { useBoardRealtime } from '@/lib/hooks/use-board-realtime';
 
 export function BoardPage({ boardId }) {
@@ -265,7 +265,7 @@ await publishEvent(CHANNELS.BOARD(boardId), {
             </Link>
           </p>
           <p className="text-sm">
-            Built with Next.js, Socket.io, Redis, and ❤️
+            Built with Next.js, WebSocket, Redis, and ❤️
           </p>
         </div>
       </div>

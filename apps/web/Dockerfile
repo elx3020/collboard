@@ -1,8 +1,8 @@
 # ╔═══════════════════════════════════════════════════════════════════════════════╗
 # ║  Multi-stage Dockerfile for collboard/apps/web                              ║
-# ║  Produces a minimal production image (~150MB) with:                         ║
-# ║    - Next.js standalone output                                              ║
-# ║    - Custom server (server.ts) for WebSocket support                        ║
+# ║  Produces a minimal production image with:                                  ║
+# ║    - Next.js standalone output (server.js)                                  ║
+# ║    - Standalone WebSocket server (ws-server.mjs)                            ║
 # ║    - Prisma Client (generated)                                              ║
 # ╚═══════════════════════════════════════════════════════════════════════════════╝
 
@@ -42,7 +42,7 @@ WORKDIR /app/apps/web
 RUN npx prisma generate
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Stage 3: Build the Next.js application via Turborepo
+# Stage 3: Build the Next.js application + bundle WS server
 # ──────────────────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -58,6 +58,15 @@ COPY . .
 # Build only the web app and its dependencies via Turborepo
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx turbo run build --filter=web...
+
+# Bundle the standalone WS server into a single .mjs file
+# so the runner stage doesn't need tsx or devDependencies.
+RUN cd apps/web && npx esbuild ws-server.ts \
+      --bundle \
+      --platform=node \
+      --format=esm \
+      --outfile=ws-server.mjs \
+      --packages=external
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 4: Production runner — minimal image
@@ -85,13 +94,20 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/prisma ./apps/web/prisma
 COPY --from=prisma --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=prisma --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
+# Copy the bundled WS server
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/ws-server.mjs ./apps/web/ws-server.mjs
+
+# Copy entrypoint script
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/entrypoint.sh ./apps/web/entrypoint.sh
+RUN chmod +x ./apps/web/entrypoint.sh
+
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 3000 3002
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV WS_PORT=3002
 
-# The standalone output creates apps/web/server.js which is the compiled
-# custom server entry point. It includes WebSocket (Socket.io) support.
-CMD ["node", "apps/web/server.js"]
+# Run both Next.js standalone server and WS server via entrypoint
+CMD ["./apps/web/entrypoint.sh"]

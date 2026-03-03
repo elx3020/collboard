@@ -1,5 +1,9 @@
 import Redis from 'ioredis';
 
+// Re-export EventType and CHANNELS from the shared types module
+// so existing API-route imports (`from '@/lib/redis'`) keep working.
+export { EventType, CHANNELS } from './types';
+
 /**
  * Redis client for pub/sub and caching
  */
@@ -95,31 +99,6 @@ export async function publishEvent(channel: string, event: Record<string, unknow
     console.error('Failed to publish event:', error);
     throw error;
   }
-}
-
-/**
- * Channel names for different event types
- */
-export const CHANNELS = {
-  BOARD: (boardId: string) => `board:${boardId}`,
-  TASK_MOVED: (boardId: string) => `board:${boardId}:task-moved`,
-  COMMENT_ADDED: (boardId: string) => `board:${boardId}:comment-added`,
-  USER_PRESENCE: (boardId: string) => `board:${boardId}:presence`,
-};
-
-/**
- * Event types for real-time updates
- */
-export enum EventType {
-  TASK_MOVED = 'task:moved',
-  TASK_CREATED = 'task:created',
-  TASK_UPDATED = 'task:updated',
-  TASK_DELETED = 'task:deleted',
-  COMMENT_ADDED = 'comment:added',
-  COMMENT_UPDATED = 'comment:updated',
-  COMMENT_DELETED = 'comment:deleted',
-  USER_JOINED = 'user:joined',
-  USER_LEFT = 'user:left',
 }
 
 /**
