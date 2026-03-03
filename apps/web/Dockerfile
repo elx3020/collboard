@@ -23,7 +23,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 
-RUN npm ci
+RUN npm ci --loglevel verbose
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 2: Generate Prisma Client

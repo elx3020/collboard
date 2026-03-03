@@ -140,8 +140,8 @@ describe('POST /api/auth/register', () => {
       createdAt: new Date().toISOString(),
     });
 
-    // We need to mock bcrypt since it uses native bindings
-    vi.doMock('bcrypt', () => ({
+    // Mock bcryptjs for testing
+    vi.doMock('bcryptjs', () => ({
       default: {
         hash: vi.fn(() => Promise.resolve('hashed')),
         compare: vi.fn(() => Promise.resolve(true)),
