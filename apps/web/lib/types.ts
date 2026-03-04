@@ -25,6 +25,64 @@ export const CHANNELS = {
   USER_PRESENCE: (boardId: string) => `board:${boardId}:presence`,
 };
 
+// ─── WebSocket Event Payload Types ─────────────────────────────────────────────
+
+export interface TaskMovedPayload {
+  task: Record<string, unknown>;
+  oldColumnId: string;
+  newColumnId: string;
+  userId: string;
+  timestamp: string;
+}
+
+export interface TaskCreatedPayload {
+  task: Record<string, unknown>;
+}
+
+export interface TaskUpdatedPayload {
+  task: Record<string, unknown>;
+}
+
+export interface TaskDeletedPayload {
+  taskId: string;
+}
+
+export interface CommentAddedPayload {
+  comment: Record<string, unknown>;
+  taskId: string;
+  timestamp: string;
+}
+
+export interface CommentUpdatedPayload {
+  comment: Record<string, unknown>;
+}
+
+export interface CommentDeletedPayload {
+  commentId: string;
+}
+
+export interface UserPresencePayload {
+  userId: string;
+  socketId?: string;
+  timestamp: string;
+}
+
+/**
+ * Maps each server-sent event type to its data payload.
+ */
+export interface WsServerEventMap {
+  [EventType.TASK_MOVED]: TaskMovedPayload;
+  [EventType.TASK_CREATED]: TaskCreatedPayload;
+  [EventType.TASK_UPDATED]: TaskUpdatedPayload;
+  [EventType.TASK_DELETED]: TaskDeletedPayload;
+  [EventType.COMMENT_ADDED]: CommentAddedPayload;
+  [EventType.COMMENT_UPDATED]: CommentUpdatedPayload;
+  [EventType.COMMENT_DELETED]: CommentDeletedPayload;
+  [EventType.USER_JOINED]: UserPresencePayload;
+  [EventType.USER_LEFT]: UserPresencePayload;
+  error: { message: string };
+}
+
 // ─── WebSocket Message Types ───────────────────────────────────────────────────
 
 /**
@@ -39,9 +97,8 @@ export type WsClientMessage =
  * Messages sent from the WS server to the client
  */
 export type WsServerMessage =
-  | { type: EventType; data: Record<string, unknown> }
-  | { type: 'pong' }
-  | { type: 'error'; data: { message: string } };
+  | { [E in keyof WsServerEventMap]: { type: E; data: WsServerEventMap[E] } }[keyof WsServerEventMap]
+  | { type: 'pong' };
 
 // ─── Shared Types ──────────────────────────────────────────────────────────────
 

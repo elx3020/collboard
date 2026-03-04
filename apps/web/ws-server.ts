@@ -1,3 +1,4 @@
+//@lint-ignore-file no-console
 import { createServer, IncomingMessage } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { getRedisSubscriber, closeRedisConnections } from './lib/redis';
@@ -18,14 +19,19 @@ interface SocketMeta {
   alive: boolean;
 }
 
+
+class WebSocketWithMeta extends WebSocket { 
+  __meta: SocketMeta = {} as SocketMeta;
+}
+
 /** Per-board set of connected sockets */
-const rooms = new Map<string, Set<WebSocket>>();
+const rooms = new Map<string, Set<WebSocketWithMeta>>();
 /** Metadata attached to each socket */
-const meta = new WeakMap<WebSocket, SocketMeta>();
+const meta = new WeakMap<WebSocketWithMeta, SocketMeta>();
 
 // ─── Room helpers ──────────────────────────────────────────────────────────────
 
-function joinRoom(ws: WebSocket, boardId: string) {
+function joinRoom(ws: WebSocketWithMeta, boardId: string) {
   const m = meta.get(ws)!;
 
   // Leave previous room (if any)
@@ -45,7 +51,7 @@ function joinRoom(ws: WebSocket, boardId: string) {
   logger.info(`User ${m.userId} joined board ${boardId}`);
 }
 
-function leaveRoom(ws: WebSocket) {
+function leaveRoom(ws: WebSocketWithMeta) {
   const m = meta.get(ws);
   if (!m?.boardId) return;
 
@@ -109,10 +115,10 @@ const httpServer = createServer((_req, res) => {
   res.end('ws ok');
 });
 
-const wss = new WebSocketServer({ noServer: true });
+const wss = new WebSocketServer({ noServer: true, WebSocket: WebSocketWithMeta });
 
-wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
-  const m = (ws as any).__meta as SocketMeta;
+wss.on('connection', (ws: WebSocketWithMeta, _req: IncomingMessage) => {
+  const m = ws.__meta;
   meta.set(ws, m);
 
   logger.info(`User connected: ${m.userId}`);
@@ -173,7 +179,7 @@ httpServer.on('upgrade', async (req, socket, head) => {
     wss.handleUpgrade(req, socket, head, (ws) => {
       // Attach metadata before emitting 'connection'
       const m: SocketMeta = { userId, boardId: null, alive: true };
-      (ws as any).__meta = m;
+      ws.__meta = m;
       wss.emit('connection', ws, req);
     });
   } catch (err) {

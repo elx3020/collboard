@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Use dynamic import so the module's internal Map resets between test files
 // (Vitest module caching). For per-test isolation we rely on unique keys.

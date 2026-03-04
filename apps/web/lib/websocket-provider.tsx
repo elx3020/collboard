@@ -9,18 +9,24 @@ import React, {
   useRef,
 } from 'react';
 import { useSession } from 'next-auth/react';
-import type { WsClientMessage, WsServerMessage } from './types';
+import type { WsClientMessage, WsServerMessage, WsServerEventMap } from './types';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────────────
 
-type EventCallback = (data: any) => void;
+type EventCallback = (data: unknown) => void;
 
 interface WebSocketContextType {
   isConnected: boolean;
   joinBoard: (boardId: string) => void;
   leaveBoard: (boardId: string) => void;
-  on: <T = unknown>(event: string, callback: (data: T) => void) => void;
-  off: <T = unknown>(event: string, callback?: (data: T) => void) => void;
+  on: <E extends string & keyof WsServerEventMap>(
+    event: E,
+    callback: (data: WsServerEventMap[E]) => void,
+  ) => void;
+  off: <E extends string & keyof WsServerEventMap>(
+    event: E,
+    callback?: (data: WsServerEventMap[E]) => void,
+  ) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -228,20 +234,32 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     [sendMessage],
   );
 
-  const on = useCallback(<T,>(event: string, callback: (data: T) => void) => {
-    if (!listenersRef.current.has(event)) {
-      listenersRef.current.set(event, new Set());
-    }
-    listenersRef.current.get(event)!.add(callback as EventCallback);
-  }, []);
+  const on = useCallback(
+    <E extends string & keyof WsServerEventMap>(
+      event: E,
+      callback: (data: WsServerEventMap[E]) => void,
+    ) => {
+      if (!listenersRef.current.has(event)) {
+        listenersRef.current.set(event, new Set());
+      }
+      listenersRef.current.get(event)!.add(callback as EventCallback);
+    },
+    [],
+  );
 
-  const off = useCallback(<T,>(event: string, callback?: (data: T) => void) => {
-    if (!callback) {
-      listenersRef.current.delete(event);
-    } else {
-      listenersRef.current.get(event)?.delete(callback as EventCallback);
-    }
-  }, []);
+  const off = useCallback(
+    <E extends string & keyof WsServerEventMap>(
+      event: E,
+      callback?: (data: WsServerEventMap[E]) => void,
+    ) => {
+      if (!callback) {
+        listenersRef.current.delete(event);
+      } else {
+        listenersRef.current.get(event)?.delete(callback as EventCallback);
+      }
+    },
+    [],
+  );
 
   const value: WebSocketContextType = {
     isConnected,

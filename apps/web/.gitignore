@@ -36,3 +36,7 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# esbuild bundled output
+ws-server.cjs
+ws-server.mjs

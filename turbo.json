@@ -11,7 +11,8 @@
     "GITHUB_CLIENT_SECRET",
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
-    "PORT"
+    "PORT",
+    "WS_PORT"
   ],
   "tasks": {
     "build": {
@@ -46,7 +47,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "env": ["NODE_ENV", "DATABASE_URL"]
+      "env": ["NODE_ENV", "DATABASE_URL", "CI"]
     },
     "dev": {
       "cache": false,
