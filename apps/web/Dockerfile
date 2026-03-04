@@ -32,7 +32,6 @@ FROM node:20-alpine AS prisma
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 COPY apps/web/prisma ./apps/web/prisma
 COPY apps/web/prisma.config.ts ./apps/web/prisma.config.ts
@@ -49,7 +48,6 @@ WORKDIR /app
 
 # Copy installed deps + generated Prisma Client
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=prisma /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy full source (respects .dockerignore)
@@ -64,9 +62,8 @@ RUN npx turbo run build --filter=web...
 RUN cd apps/web && npx esbuild ws-server.ts \
       --bundle \
       --platform=node \
-      --format=esm \
-      --outfile=ws-server.mjs \
-      --packages=external
+      --format=cjs \
+      --outfile=ws-server.cjs
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 4: Production runner — minimal image
@@ -89,13 +86,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
+
 # Copy Prisma schema (needed for prisma migrate deploy) and generated client
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/prisma ./apps/web/prisma
 COPY --from=prisma --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=prisma --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy the bundled WS server
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/ws-server.mjs ./apps/web/ws-server.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/ws-server.cjs ./apps/web/ws-server.cjs
 
 # Copy entrypoint script
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/entrypoint.sh ./apps/web/entrypoint.sh

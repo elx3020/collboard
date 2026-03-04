@@ -22,6 +22,7 @@ services:
     container_name: collboard-web-local
     ports:
       - "3000:3000"
+      - "3002:3002" # WebSocket server port
     env_file:
       - apps/web/.env.docker.local
     depends_on:

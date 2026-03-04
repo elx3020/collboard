@@ -9,7 +9,7 @@ node apps/web/server.js &
 NEXT_PID=$!
 
 # Start WebSocket server
-node apps/web/ws-server.mjs &
+node apps/web/ws-server.cjs &
 WS_PID=$!
 
 # Trap signals and forward to children
