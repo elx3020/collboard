@@ -1,4 +1,4 @@
-import Image from 'next/image'
+// import Image from 'next/image'
 import { CloudArrowUpIcon, LockClosedIcon, ServerIcon } from '@heroicons/react/20/solid'
 
 const features = [

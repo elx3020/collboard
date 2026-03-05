@@ -117,7 +117,7 @@ const httpServer = createServer((_req, res) => {
 
 const wss = new WebSocketServer({ noServer: true, WebSocket: WebSocketWithMeta });
 
-wss.on('connection', (ws: WebSocketWithMeta, _req: IncomingMessage) => {
+wss.on('connection', (ws: WebSocketWithMeta) => {
   const m = ws.__meta;
   meta.set(ws, m);
 

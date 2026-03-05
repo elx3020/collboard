@@ -12,7 +12,8 @@
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
     "PORT",
-    "WS_PORT"
+    "WS_PORT",
+    "LOG_LEVEL"
   ],
   "tasks": {
     "build": {
@@ -47,7 +48,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "env": ["NODE_ENV", "DATABASE_URL", "CI"]
+      "env": ["NODE_ENV", "DATABASE_URL", "CI", "PLAYWRIGHT_BASE_URL"]
     },
     "dev": {
       "cache": false,

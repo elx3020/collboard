@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Dialog, DialogPanel } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 const navigation = [
     { name: 'Collboard', href: '#' },
     { name: 'Features', href: '#' },
@@ -21,7 +22,7 @@ export default function HeroMain() {
             <header className="absolute inset-x-0 top-0 z-50">
                 <nav aria-label="Global" className="flex items-center justify-between p-6 lg:px-8">
                     <div className="flex lg:flex-1">
-                        <a href="/" className="-m-1.5 p-1.5">
+                        <Link href="/" className="-m-1.5 p-1.5">
                             <span className="sr-only">Collboard</span>
                             <Image
                                 alt="Collboard logo"
@@ -39,7 +40,7 @@ export default function HeroMain() {
                                 className="h-8 w-auto not-dark:hidden"
                                 priority
                             />
-                        </a>
+                        </Link>
                     </div>
                     <div className="flex lg:hidden">
                         <button
@@ -68,7 +69,7 @@ export default function HeroMain() {
                     <div className="fixed inset-0 z-50" />
                     <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-card p-6 sm:max-w-sm sm:ring-1 sm:ring-border">
                         <div className="flex items-center justify-between">
-                            <a href="#" className="-m-1.5 p-1.5">
+                            <Link href="/" className="-m-1.5 p-1.5">
                                 <span className="sr-only">Collboard</span>
                                 <Image
                                     alt="Collboard logo"
@@ -84,7 +85,7 @@ export default function HeroMain() {
                                     height={32}
                                     className="h-8 w-auto not-dark:hidden"
                                 />
-                            </a>
+                            </Link>
                             <button
                                 type="button"
                                 onClick={() => setMobileMenuOpen(false)}

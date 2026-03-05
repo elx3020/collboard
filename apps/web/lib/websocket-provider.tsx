@@ -85,6 +85,32 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   // ── Connection lifecycle ──────────────────────────────────────────────────
 
+  const connectRef = useRef<(token: string) => void>(() => { });
+
+  const scheduleReconnect = useCallback(
+    (token: string) => {
+      if (!mountedRef.current) return;
+      if (reconnectAttemptRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        console.error('Max WebSocket reconnect attempts reached');
+        return;
+      }
+
+      const delay = Math.min(
+        INITIAL_RECONNECT_DELAY * 2 ** reconnectAttemptRef.current,
+        MAX_RECONNECT_DELAY,
+      );
+
+      reconnectAttemptRef.current += 1;
+
+      reconnectTimerRef.current = setTimeout(() => {
+        console.log(`WebSocket reconnect attempt ${reconnectAttemptRef.current}`);
+        connectRef.current(token);
+      }, delay);
+    },
+    [connectRef],
+  );
+
+
   const connect = useCallback(
     (token: string) => {
       if (!mountedRef.current) return;
@@ -138,31 +164,13 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         // onclose will fire after this — reconnection handled there
       };
     },
-    [sendMessage, dispatchEvent],
+    [sendMessage, dispatchEvent, scheduleReconnect],
   );
 
-  const scheduleReconnect = useCallback(
-    (token: string) => {
-      if (!mountedRef.current) return;
-      if (reconnectAttemptRef.current >= MAX_RECONNECT_ATTEMPTS) {
-        console.error('Max WebSocket reconnect attempts reached');
-        return;
-      }
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
-      const delay = Math.min(
-        INITIAL_RECONNECT_DELAY * 2 ** reconnectAttemptRef.current,
-        MAX_RECONNECT_DELAY,
-      );
-
-      reconnectAttemptRef.current += 1;
-
-      reconnectTimerRef.current = setTimeout(() => {
-        console.log(`WebSocket reconnect attempt ${reconnectAttemptRef.current}`);
-        connect(token);
-      }, delay);
-    },
-    [connect],
-  );
 
   // ── Initialise/teardown ───────────────────────────────────────────────────
 

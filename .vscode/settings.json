@@ -1,0 +1,23 @@
+{
+  "eslint.useFlatConfig": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.run": "onType",
+  "eslint.workingDirectories": [
+    {
+      "directory": "apps/web",
+      "changeProcessCWD": true
+    },
+    {
+      "directory": "apps/docs",
+      "changeProcessCWD": true
+    }
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
