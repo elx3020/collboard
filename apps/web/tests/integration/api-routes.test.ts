@@ -24,7 +24,10 @@ const mockPrisma = {
   },
   user: {
     findUnique: vi.fn(),
+    create: vi.fn(),
   },
+  $connect: vi.fn(),
+  $disconnect: vi.fn(),
 };
 
 vi.mock('@/lib/prisma', () => ({
