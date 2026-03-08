@@ -23,7 +23,7 @@ test.describe('Authentication Flow', () => {
     await page.goto('/auth/signup');
 
     await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(page.getByLabel('Password',{exact: true})).toBeVisible();
   });
 
   test('sign-in with invalid credentials shows error', async ({ page }) => {
