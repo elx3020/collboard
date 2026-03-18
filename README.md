@@ -182,33 +182,6 @@ API routes are available under `/api`:
 - `/api/tasks` - Task CRUD and reordering
 - `/api/tasks/[id]/comments` - Comment management
 
-## 🚢 Deployment
-
-### Frontend (Vercel)
-
-```bash
-# Deploy to Vercel
-vercel deploy
-```
-
-### Backend & Database
-
-Options:
-
-- **Railway**: PostgreSQL + Next.js backend
-- **Fly.io**: For containerized deployments
-- **Render**: All-in-one platform
-- **Supabase/Neon**: Managed PostgreSQL
-
-## 📚 Project Roadmap
-
-- [x] Day 1: Project setup & architecture
-- [ ] Day 2: Authentication & authorization
-- [ ] Day 3: Core API & CRUD operations
-- [ ] Day 4: Real-time features with WebSockets
-- [ ] Day 5: Advanced frontend (drag-and-drop, state management)
-- [ ] Day 6: Testing, performance & polish
-- [ ] Day 7: DevOps, CI/CD & deployment
 
 ## 🤝 Contributing
 
