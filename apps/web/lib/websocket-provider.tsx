@@ -43,6 +43,9 @@ export function useWebSocket() {
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
+// In production the WS server sits behind Caddy at /ws on the same origin.
+// Locally there is no proxy, so fall back to the direct port.
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || '';
 const WS_PORT = process.env.NEXT_PUBLIC_WS_PORT || '3002';
 
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -117,8 +120,10 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
       // Determine WebSocket URL
       const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const host = window.location.hostname;
-      const url = `${protocol}://${host}:${WS_PORT}?token=${encodeURIComponent(token)}`;
+
+      const base = WS_URL.startsWith('/') ? `${protocol}://${window.location.host}${WS_URL}` : WS_URL || `${protocol}://${window.location.hostname}:${WS_PORT}`;
+
+      const url = `${base}?token=${encodeURIComponent(token)}`;
 
       const ws = new WebSocket(url);
       wsRef.current = ws;
