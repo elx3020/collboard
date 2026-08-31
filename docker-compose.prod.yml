@@ -10,20 +10,17 @@
 services:
   # ── Web Application ───────────────────────────────────────────────────────
   web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
     image: ghcr.io/${GHCR_IMAGE:-collboard/web}:${IMAGE_TAG:-latest}
     container_name: collboard-web
     restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3000}:3000"
-      - "${WS_PORT:-3002}:3002"
+    expose:
+      - "3000"
+      - "3002"
     environment:
       NODE_ENV: production
       DATABASE_URL: "postgresql://collboard:${DB_PASSWORD}@postgres:5432/collboard?schema=public"
       NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
-      NEXTAUTH_URL: "${NEXTAUTH_URL}"
+      NEXTAUTH_URL: "https://${DOMAIN}"
       REDIS_URL: "redis://redis:6379"
       WS_PORT: "3002"
       NEXT_PUBLIC_WS_PORT: "3002"
@@ -76,10 +73,7 @@ services:
 
   # ── Database Migration (one-off) ─────────────────────────────────────────
   migrate:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      target: builder
+    image: ghcr.io/${GHCR_IMAGE}:${IMAGE_TAG:-latest}-migrate
     container_name: collboard-migrate
     environment:
       DATABASE_URL: "postgresql://collboard:${DB_PASSWORD}@postgres:5432/collboard?schema=public"
@@ -90,6 +84,25 @@ services:
       sh -c "cd apps/web && npx prisma migrate deploy"
     restart: "no"
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: collboard-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"          # HTTP/3
+    environment:
+      DOMAIN: "${DOMAIN}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # certificates — must persist
+      - caddy_config:/config
+    depends_on:
+      - web
+
 volumes:
   pgdata:
   redisdata:
+  caddy_data:
+  caddy_config:
