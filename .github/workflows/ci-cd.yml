@@ -186,7 +186,7 @@ jobs:
   # ═══════════════════════════════════════════════════════════════════════════
   build:
     name: Build & Push Docker Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     needs: [test, e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -225,11 +225,22 @@ jobs:
         with:
           context: .
           file: apps/web/Dockerfile
+          platforms: linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Build and push migration image
+        uses: docker/build-push-action@v5
+        with:
+          context:
+            file: apps/web/Dockerfile
+            target: builder
+            platforms: linux/arm64
+            push: true
+            tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-migrate
+            cache-from: type=gha
 
   # ═══════════════════════════════════════════════════════════════════════════
   # Deploy to Production
