@@ -55,6 +55,11 @@ COPY . .
 
 # Build only the web app and its dependencies via Turborepo
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Inlined into the client bundle. "/ws" keeps the socket same-origin behind Caddy.
+ARG NEXT_PUBLIC_WS_URL=/ws
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+
 RUN npx turbo run build --filter=web...
 
 # Bundle the standalone WS server into a single .mjs file
