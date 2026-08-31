@@ -1,0 +1,13 @@
+{$DOMAIN} {
+	encode zstd gzip
+
+	# WebSocket server — Caddy upgrades these automatically
+	handle /ws* {
+		reverse_proxy web:3002
+	}
+
+	# Everything else: Next.js
+	handle {
+		reverse_proxy web:3000
+	}
+}
