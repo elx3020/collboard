@@ -35,7 +35,7 @@ export const config = [
     },
   },
   {
-    ignores: ["dist/**"],
+    ignores: ["dist/**","scripts/**", "apps/web/coverage/**"],
   },
   // Prettier must be last to override formatting rules from earlier configs
   eslintConfigPrettier,
