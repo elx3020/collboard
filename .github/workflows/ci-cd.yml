@@ -219,7 +219,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,prefix=
+            # Higher priority wins the `version` output, which becomes IMAGE_TAG.
+            # Without the explicit priority, `latest` (default 200) beats the sha
+            # (default 100) and every deploy would overwrite the same mutable tag.
+            type=sha,prefix=,priority=300
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push image
@@ -249,7 +252,7 @@ jobs:
   # Deploy to Production
   # ═══════════════════════════════════════════════════════════════════════════
   deploy:
-    name: Deploy to Production
+    name: Deploy to Oracle VM
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -261,51 +264,73 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Configure SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
         run: |
-          # Setup SSH
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-          # Deploy on remote server
-          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << ENDSSH
-            set -e
-            cd /opt/collboard
+      # Keeps the VM's compose config in step with the repo, so editing
+      # docker-compose.prod.yml or the Caddyfile takes effect on deploy.
+      - name: Sync compose config to the VM
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          scp -i ~/.ssh/deploy_key \
+            docker-compose.prod.yml Caddyfile \
+            "$DEPLOY_USER@$DEPLOY_HOST:/opt/collboard/"
 
-            # Pull the new image
-            echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
-            docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+      # NOTE: the heredoc is quoted (<<'ENDSSH') so nothing expands on the
+      # runner — IMAGE_TAG is handed to the remote shell on the ssh command
+      # line instead. The ENDSSH terminator must stay at this indentation.
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "IMAGE_TAG='$IMAGE_TAG' bash -s" <<'ENDSSH'
+          set -euo pipefail
+          cd /opt/collboard
 
-            # Update IMAGE_TAG in .env so compose uses the new image
-            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
+          echo "==> Deploying ${IMAGE_TAG}"
 
-            # Run database migrations
-            echo "Running database migrations..."
-            docker compose -f docker-compose.prod.yml run --rm migrate
+          if grep -q '^IMAGE_TAG=' .env; then
+            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${IMAGE_TAG}|" .env
+          else
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
+          fi
 
-            # Rolling restart of the web service
-            echo "Restarting web service..."
-            docker compose -f docker-compose.prod.yml up -d --no-deps web
+          echo "==> Pulling images"
+          docker compose -f docker-compose.prod.yml pull web migrate caddy
 
-            # Wait for the health check
-            echo "Waiting for health check..."
-            sleep 15
-            if wget --spider -q http://localhost:3000/api/health; then
-              echo "Health check passed ✓"
-            else
-              echo "Health check FAILED — rolling back"
-              docker compose -f docker-compose.prod.yml logs --tail=50 web
-              exit 1
+          echo "==> Applying migrations"
+          docker compose -f docker-compose.prod.yml run --rm migrate
+
+          echo "==> Restarting services"
+          docker compose -f docker-compose.prod.yml up -d --no-deps web caddy
+
+          # Port 3000 is not published on the host, so probe inside the container.
+          echo "==> Waiting for health check"
+          for i in $(seq 1 20); do
+            if docker compose -f docker-compose.prod.yml exec -T web \
+                 wget --spider -q http://localhost:3000/api/health; then
+              echo "Health check passed after $((i * 5))s"
+              docker image prune -f
+              echo "Deploy complete"
+              exit 0
             fi
+            sleep 5
+          done
 
-            # Prune old images
-            docker image prune -f
-            echo "Deploy complete ✓"
+          echo "Health check FAILED"
+          docker compose -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.prod.yml logs --tail=80 web
+          exit 1
           ENDSSH

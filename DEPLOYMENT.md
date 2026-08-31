@@ -215,8 +215,8 @@ require manual approval.
 
 ```
 /opt/collboard/
-├── docker-compose.prod.yml   # copied from the repo
-├── Caddyfile                 # copied from the repo
+├── docker-compose.prod.yml   # scp'd from the repo on every deploy
+├── Caddyfile                 # scp'd from the repo on every deploy
 ├── .env                      # secrets — never committed, chmod 600
 ├── backup.sh                 # nightly pg_dump
 └── backups/                  # rotated 14 days
