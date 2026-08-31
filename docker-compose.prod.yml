@@ -23,7 +23,6 @@ services:
       NEXTAUTH_URL: "https://${DOMAIN}"
       REDIS_URL: "redis://redis:6379"
       WS_PORT: "3002"
-      NEXT_PUBLIC_WS_PORT: "3002"
       GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID:-}"
       GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"

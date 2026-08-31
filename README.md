@@ -11,7 +11,8 @@ A modern, full-stack Kanban-style task board with real-time collaboration capabi
 - 🎨 **Modern UI**: Built with Tailwind CSS with dark/light mode support
 - ⚡ **Monorepo**: Turborepo-powered monorepo for efficient builds and development
 - 🧪 **Testing**: Unit, integration, and E2E tests
-- 🐳 **Docker**: Docker Compose for local development environment
+- 🐳 **Docker**: Docker Compose for local development and production
+- ☁️ **Deployed**: Single ARM VM behind Caddy, shipped by GitHub Actions
 
 ## 🏗️ Architecture
 
@@ -20,14 +21,24 @@ This project uses a monorepo structure powered by Turborepo:
 ```
 collboard/
 ├── apps/
-│   ├── web/          # Next.js frontend and API routes
+│   ├── web/          # Next.js frontend, API routes, and WebSocket server
 │   └── docs/         # Documentation site
 ├── packages/
 │   ├── ui/           # Shared React components
-│   ├── eslint-config/    # Shared ESLint configuration
+│   ├── eslint-config/     # Shared ESLint configuration
 │   └── typescript-config/ # Shared TypeScript configuration
-└── docker-compose.yml    # Local development services
+├── Caddyfile                 # Production reverse proxy / TLS
+├── docker-compose.yml        # Local dev services (Postgres + Redis)
+├── docker-compose.local.yml  # Production image, run locally
+└── docker-compose.prod.yml   # Production stack
 ```
+
+The web app runs **two servers**: Next.js on port 3000 and a standalone
+WebSocket server on port 3002, started together by `apps/web/entrypoint.sh`.
+In production Caddy routes `/ws*` to the socket server and everything else to
+Next.js, so both share a single origin and certificate.
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the full production architecture.
 
 ## 📋 Prerequisites
 
@@ -146,7 +157,10 @@ These run automatically before each commit.
 | Auth      | JWT / NextAuth.js                         |
 | Monorepo  | Turborepo                                 |
 | Testing   | Vitest, React Testing Library, Playwright |
-| DevOps    | Docker, GitHub Actions                    |
+| CI/CD     | GitHub Actions (arm64 runners)            |
+| Registry  | GitHub Container Registry (GHCR)          |
+| Proxy     | Caddy 2 (automatic HTTPS)                 |
+| Hosting   | Oracle Cloud — Ampere A1 ARM VM           |
 
 ## 🔐 Environment Variables
 
@@ -158,6 +172,26 @@ NEXTAUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
 REDIS_URL="redis://localhost:6379"
 ```
+
+> **`NEXT_PUBLIC_WS_URL`** controls where the browser opens its WebSocket. It is
+> inlined by Next.js at **build time**, so it is a Docker build arg rather than a
+> runtime variable. It defaults to `/ws` in the production image (same-origin,
+> behind Caddy). Leave it unset for local development and the client falls back
+> to `ws://localhost:3002`.
+
+## 🚢 Deployment
+
+Production runs on a single Oracle Cloud Always Free ARM VM: Caddy terminates
+TLS and routes by path, with the app, Postgres and Redis as Docker Compose
+services on the same host.
+
+```
+push to main → lint + types → tests + e2e → build arm64 image → push to GHCR
+             → ssh to VM → pull → prisma migrate deploy → restart → health check
+```
+
+Full architecture, host layout, configuration surface, operational runbook and
+known constraints: **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ## 🧪 Testing
 
@@ -181,7 +215,6 @@ API routes are available under `/api`:
 - `/api/boards/[id]/columns` - Column management
 - `/api/tasks` - Task CRUD and reordering
 - `/api/tasks/[id]/comments` - Comment management
-
 
 ## 🤝 Contributing
 
