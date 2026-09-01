@@ -60,7 +60,7 @@ export function AuthSubmitButton({
         <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 disabled:opacity-50"
+            className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-[var(--accent-foreground)] shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 disabled:opacity-50"
         >
             {isLoading ? loadingLabel : children}
         </button>

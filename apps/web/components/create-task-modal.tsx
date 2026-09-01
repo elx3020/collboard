@@ -95,7 +95,7 @@ export function CreateTaskModal({ open, onClose, boardId, columnId }: CreateTask
                     <button
                         type="submit"
                         disabled={createTask.isPending || !title.trim()}
-                        className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                        className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                         {createTask.isPending ? 'Creating...' : 'Create Task'}
                     </button>

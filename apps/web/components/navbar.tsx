@@ -54,7 +54,7 @@ export function Navbar() {
                                     className="h-8 w-8 rounded-full ring-2 ring-[var(--border)]"
                                 />
                             ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-medium text-white">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-medium text-[var(--accent-foreground)]">
                                     {(session.user.name || session.user.email || '?')[0]?.toUpperCase()}
                                 </div>
                             )}

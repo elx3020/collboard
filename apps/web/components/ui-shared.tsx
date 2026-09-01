@@ -53,7 +53,7 @@ export function Avatar({
     return (
         <div
             className={clsx(
-                'flex items-center justify-center rounded-full bg-[var(--accent)] font-medium text-white',
+                'flex items-center justify-center rounded-full bg-[var(--accent)] font-medium text-[var(--accent-foreground)]',
                 sizeClass
             )}
         >

@@ -89,7 +89,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                             <button
                                 onClick={handleSave}
                                 disabled={updateTask.isPending}
-                                className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                                className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50"
                             >
                                 {updateTask.isPending ? 'Saving...' : 'Save'}
                             </button>
@@ -204,7 +204,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                         <button
                             type="submit"
                             disabled={createComment.isPending || !commentText.trim()}
-                            className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                            className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50"
                         >
                             Post
                         </button>

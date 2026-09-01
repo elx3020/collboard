@@ -32,7 +32,7 @@ export default function DashboardPage() {
                     </div>
                     <button
                         onClick={() => setCreateModalOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                        className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -86,7 +86,7 @@ export default function DashboardPage() {
                         action={
                             <button
                                 onClick={() => setCreateModalOpen(true)}
-                                className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                                className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity"
                             >
                                 Create Board
                             </button>
