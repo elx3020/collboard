@@ -182,6 +182,7 @@ export interface CreateBoardRequest {
 export interface UpdateBoardRequest {
   title?: string;
   description?: string;
+  color?: string | null;
 }
 
 export interface CreateColumnRequest {

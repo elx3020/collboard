@@ -7,14 +7,13 @@ import { Navbar } from '@/components/navbar';
 import { Spinner, EmptyState } from '@/components/ui-shared';
 import { BoardSection } from '@/components/dashboard/board-section';
 import { groupBoards } from '@/lib/boards/group-boards';
+import { BoardSettingsModal } from '@/components/dashboard/board-settings-modal';
+import type { Board } from '@/lib/types';
 
 // Lazy load the modal — only downloaded when user clicks "New Board"
 const CreateBoardModal = lazy(() =>
     import('@/components/create-board-modal').then((m) => ({ default: m.CreateBoardModal }))
 );
-
-// Task 4 replaces this with real settings-modal state.
-const NOOP_OPEN_SETTINGS = () => {};
 
 function PlusIcon() {
     return (
@@ -57,6 +56,7 @@ export default function DashboardPage() {
     const { data: boards, isLoading, error } = useBoards();
     const deleteBoard = useDeleteBoard();
     const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [settingsBoard, setSettingsBoard] = useState<Board | null>(null);
 
     const currentUserId = session?.user?.id ?? '';
     const grouped = groupBoards(boards ?? [], currentUserId);
@@ -124,21 +124,21 @@ export default function DashboardPage() {
                             boards={grouped.owned}
                             emptyHint="Boards you own that are not shared with anyone."
                             onDelete={handleDelete}
-                            onOpenSettings={NOOP_OPEN_SETTINGS}
+                            onOpenSettings={setSettingsBoard}
                         />
                         <BoardSection
                             title="Shared by me"
                             boards={grouped.sharedByMe}
                             emptyHint="Boards you own and have invited others to."
                             onDelete={handleDelete}
-                            onOpenSettings={NOOP_OPEN_SETTINGS}
+                            onOpenSettings={setSettingsBoard}
                         />
                         <BoardSection
                             title="Shared with me"
                             boards={grouped.sharedWithMe}
                             emptyHint="Boards owned by other people that you can access."
                             onDelete={handleDelete}
-                            onOpenSettings={NOOP_OPEN_SETTINGS}
+                            onOpenSettings={setSettingsBoard}
                         />
                     </>
                 )}
@@ -150,6 +150,11 @@ export default function DashboardPage() {
                     onClose={() => setCreateModalOpen(false)}
                 />
             </Suspense>
+
+            <BoardSettingsModal
+                board={settingsBoard}
+                onClose={() => setSettingsBoard(null)}
+            />
         </div>
     );
 }
