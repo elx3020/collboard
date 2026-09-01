@@ -123,7 +123,7 @@ export interface Board {
   members: BoardMember[];
   columns: Column[];
   currentUserRole?: Role;
-  _count?: { columns: number };
+  _count?: { columns: number; members: number };
 }
 
 export interface BoardMember {
