@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
+import { isBoardColor } from '@/lib/boards/board-colors';
 import { requireBoardPermission } from '@/lib/auth/rbac';
 
 /**
@@ -59,7 +60,7 @@ export const PATCH = withAuth<{ boardId: string }>(async (req, { params, userId 
   await requireBoardPermission(userId, boardId, 'board:edit');
 
   const body = await req.json();
-  const { title, description } = body;
+  const { title, description, color } = body;
 
   const data: Record<string, unknown> = {};
   if (title !== undefined) {
@@ -73,6 +74,19 @@ export const PATCH = withAuth<{ boardId: string }>(async (req, { params, userId 
   }
   if (description !== undefined) {
     data.description = description?.trim() || null;
+  }
+
+  if (color !== undefined) {
+    if (color === null) {
+      data.color = null;
+    } else if (isBoardColor(color)) {
+      data.color = color;
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid board color' },
+        { status: 400 }
+      );
+    }
   }
 
   if (Object.keys(data).length === 0) {

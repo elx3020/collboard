@@ -21,6 +21,7 @@ function makeBoard(overrides: Partial<Board> = {}): Board {
         id: 'board-1',
         title: 'Q3 Roadmap',
         description: 'Ship the new onboarding',
+        color: null,
         ownerId: 'user-1',
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',

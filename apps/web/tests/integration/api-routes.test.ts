@@ -228,3 +228,80 @@ describe('GET /api/health', () => {
     expect(body.database).toBe('connected');
   });
 });
+
+// ── PATCH /api/boards/[boardId] colour validation ──────────────────────────────
+
+describe('PATCH /api/boards/[boardId] colour', () => {
+  it('accepts a colour from the palette', async () => {
+    mockPrisma.board.findUnique.mockResolvedValue({
+      ownerId: 'user-1',
+      members: [],
+    });
+    mockPrisma.board.update.mockResolvedValue({
+      id: 'board-1',
+      title: 'Board',
+      color: 'amber',
+    });
+
+    const { PATCH } = await import('@/app/api/boards/[boardId]/route');
+
+    const req = new Request('http://localhost:3000/api/boards/board-1', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color: 'amber' }),
+    });
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ boardId: 'board-1' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockPrisma.board.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ color: 'amber' }) })
+    );
+  });
+
+  it('accepts null to clear the colour', async () => {
+    mockPrisma.board.findUnique.mockResolvedValue({
+      ownerId: 'user-1',
+      members: [],
+    });
+    mockPrisma.board.update.mockResolvedValue({ id: 'board-1', color: null });
+
+    const { PATCH } = await import('@/app/api/boards/[boardId]/route');
+
+    const req = new Request('http://localhost:3000/api/boards/board-1', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color: null }),
+    });
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ boardId: 'board-1' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockPrisma.board.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ color: null }) })
+    );
+  });
+
+  it('rejects a colour outside the palette', async () => {
+    mockPrisma.board.findUnique.mockResolvedValue({
+      ownerId: 'user-1',
+      members: [],
+    });
+
+    const { PATCH } = await import('@/app/api/boards/[boardId]/route');
+
+    const req = new Request('http://localhost:3000/api/boards/board-1', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color: '#FEE35C' }),
+    });
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ boardId: 'board-1' }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(mockPrisma.board.update).not.toHaveBeenCalled();
+  });
+});

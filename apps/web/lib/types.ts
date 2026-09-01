@@ -116,6 +116,7 @@ export interface Board {
   id: string;
   title: string;
   description: string | null;
+  color: string | null;
   ownerId: string;
   createdAt: string;
   updatedAt: string;
