@@ -110,11 +110,16 @@ The application uses the following database models:
 From the root directory:
 
 ```bash
-npm run dev          # Start all apps in development mode
-npm run build        # Build all apps and packages
-npm run lint         # Lint all apps and packages
-npm run format       # Format code with Prettier
-npm run check-types  # Type-check all TypeScript code
+npm run dev           # Start all apps in development mode
+npm run build         # Build all apps and packages
+npm run lint          # Lint all apps and packages
+npm run format        # Format code with Prettier
+npm run check-types   # Type-check all TypeScript code
+npm run test          # Unit, integration and component tests
+npm run test:watch    # Same, in watch mode
+npm run test:coverage # Same, with a coverage report
+npm run test:e2e      # Playwright end-to-end tests
+npm run test:e2e:ui   # Playwright in UI mode
 ```
 
 ### Working with Prisma
@@ -186,7 +191,7 @@ TLS and routes by path, with the app, Postgres and Redis as Docker Compose
 services on the same host.
 
 ```
-push to main → lint + types → tests + e2e → build arm64 image → push to GHCR
+manual "Run workflow" (Actions tab) → lint + types → tests + e2e → build arm64 image → push to GHCR
              → ssh to VM → pull → prisma migrate deploy → restart → health check
 ```
 
@@ -195,15 +200,33 @@ known constraints: **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ## 🧪 Testing
 
+Unit, integration and component tests run under Vitest and mock the database,
+so they need no running services:
+
 ```bash
-# Run all tests
-npm run test
+npm run test           # run once
+npm run test:watch     # watch mode
+npm run test:coverage  # with coverage report
+```
 
-# Run tests in watch mode
-npm run test:watch
+E2E tests use Playwright. Browsers are not downloaded during `npm install`, and
+the suite needs Postgres and Redis up:
 
-# Run E2E tests
-npm run test:e2e
+```bash
+npx playwright install --with-deps chromium   # once
+docker-compose up -d                          # Postgres + Redis
+
+npm run test:e2e      # boots the dev server automatically
+npm run test:e2e:ui   # interactive UI mode
+```
+
+To run the whole CI pipeline locally — lint, type-check, tests, E2E and the
+Docker build — use the helper script, which starts and tears down the services
+for you:
+
+```bash
+./scripts/test-ci-local.sh              # all stages
+./scripts/test-ci-local.sh quality test # selected stages
 ```
 
 ## 📝 API Documentation

@@ -1,10 +1,8 @@
 name: CI/CD Pipeline
 
+# Manual only: the "Run workflow" button on the Actions tab is the sole trigger.
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [prod]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -191,7 +189,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     needs: [test, e2e]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
 
     permissions:
       contents: read

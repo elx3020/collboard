@@ -183,7 +183,7 @@ deploy.
 
 ```mermaid
 flowchart TD
-    PUSH([push to main]) --> Q["<b>quality</b><br/>lint · check-types"]
+    PUSH([manual run · Actions tab]) --> Q["<b>quality</b><br/>lint · check-types"]
     Q --> T["<b>test</b><br/>vitest + postgres + redis"]
     Q --> E["<b>e2e</b><br/>playwright"]
     T --> BLD
