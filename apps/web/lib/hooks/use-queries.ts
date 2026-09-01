@@ -259,6 +259,9 @@ export function useInviteMember(boardId: string) {
       membersApi.invite(boardId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.members(boardId) });
+      // The board list carries _count.members, which drives the dashboard
+      // owned/shared grouping — it goes stale on every membership change.
+      qc.invalidateQueries({ queryKey: queryKeys.boards });
       toast.success('Member invited');
     },
     onError: (err: Error) => toast.error(err.message),
@@ -271,6 +274,7 @@ export function useRemoveMember(boardId: string) {
     mutationFn: (memberId: string) => membersApi.remove(boardId, memberId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.members(boardId) });
+      qc.invalidateQueries({ queryKey: queryKeys.boards });
       toast.success('Member removed');
     },
     onError: (err: Error) => toast.error(err.message),

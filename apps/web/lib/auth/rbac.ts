@@ -203,12 +203,26 @@ export async function getBoardMembers(boardId: string) {
   if (!board) return null;
 
   return {
-    owner: { ...board.owner, role: 'OWNER' as Role },
-    members: board.members.map((m: { user: { id: string; name: string | null; email: string; image: string | null }; role: Role; createdAt: Date }) => ({
-      ...m.user,
-      role: m.role,
-      joinedAt: m.createdAt,
-    })),
+    owner: { ...board.owner, userId: board.owner.id, role: 'OWNER' as Role },
+    // `id` is the BoardMember row id — the members routes look membership up
+    // by it, so it must survive to the client. The user's own id is exposed
+    // separately as `userId`.
+    members: board.members.map(
+      (m: {
+        id: string;
+        user: { id: string; name: string | null; email: string; image: string | null };
+        role: Role;
+        createdAt: Date;
+      }) => ({
+        id: m.id,
+        userId: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        image: m.user.image,
+        role: m.role,
+        joinedAt: m.createdAt,
+      })
+    ),
   };
 }
 

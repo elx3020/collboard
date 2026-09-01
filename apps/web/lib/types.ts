@@ -135,6 +135,25 @@ export interface BoardMember {
   createdAt: string;
 }
 
+/** One entry from GET /api/boards/[boardId]/members. */
+export interface BoardMemberEntry {
+  /** BoardMember row id — this is what the member routes look up by. */
+  id: string;
+  /** The member's user id. */
+  userId: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+  role: Role;
+  joinedAt: string;
+}
+
+/** Response shape of GET /api/boards/[boardId]/members. */
+export interface BoardMemberList {
+  owner: Omit<BoardMemberEntry, 'id' | 'joinedAt'> & { id: string };
+  members: BoardMemberEntry[];
+}
+
 export interface Column {
   id: string;
   title: string;

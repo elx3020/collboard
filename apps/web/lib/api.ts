@@ -4,6 +4,7 @@ import type {
   Task,
   Comment,
   BoardMember,
+  BoardMemberList,
   CreateBoardRequest,
   UpdateBoardRequest,
   CreateColumnRequest,
@@ -140,7 +141,7 @@ export const commentsApi = {
 
 export const membersApi = {
   list: (boardId: string) =>
-    apiFetch<BoardMember[]>(`/api/boards/${boardId}/members`),
+    apiFetch<BoardMemberList>(`/api/boards/${boardId}/members`),
 
   invite: (boardId: string, data: InviteMemberRequest) =>
     apiFetch<BoardMember>(`/api/boards/${boardId}/members`, {
