@@ -120,23 +120,26 @@ export default function DashboardPage() {
                 {boards && boards.length > 0 && (
                     <>
                         <BoardSection
+                            id="owned"
                             title="My boards"
                             boards={grouped.owned}
-                            emptyHint="Boards you own that are not shared with anyone."
+                            emptyHint="Boards you create and keep to yourself will appear here."
                             onDelete={handleDelete}
                             onOpenSettings={setSettingsBoard}
                         />
                         <BoardSection
+                            id="sharedByMe"
                             title="Shared by me"
                             boards={grouped.sharedByMe}
-                            emptyHint="Boards you own and have invited others to."
+                            emptyHint="Once you invite someone to a board you own, it will appear here."
                             onDelete={handleDelete}
                             onOpenSettings={setSettingsBoard}
                         />
                         <BoardSection
+                            id="sharedWithMe"
                             title="Shared with me"
                             boards={grouped.sharedWithMe}
-                            emptyHint="Boards owned by other people that you can access."
+                            emptyHint="When someone invites you to their board, it will appear here."
                             onDelete={handleDelete}
                             onOpenSettings={setSettingsBoard}
                         />
