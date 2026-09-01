@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import type React from 'react';
 import type { Board } from '@/lib/types';
+import { isBoardColor } from '@/lib/boards/board-colors';
 
 function ColumnsIcon() {
     return (
@@ -50,10 +52,22 @@ export function BoardCard({
     onOpenSettings: (board: Board) => void;
 }) {
     const isOwner = board.currentUserRole === 'OWNER';
+    // Guard again on render: the value reaches the DOM as a CSS variable name.
+    const color = isBoardColor(board.color) ? board.color : null;
+    // Overriding --muted-foreground on the card cascades to the description and
+    // the meta counts, which both read it. The default grey drops below the 4.5
+    // AA floor against these tints.
+    const colorStyle = color
+        ? ({
+              background: `var(--board-${color})`,
+              '--muted-foreground': 'var(--board-muted-foreground)',
+          } as React.CSSProperties)
+        : undefined;
 
     return (
         <Link
             href={`/boards/${board.id}`}
+            style={colorStyle}
             className="group relative rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm transition-all hover:border-[var(--accent)] hover:shadow-md"
         >
             {isOwner && (

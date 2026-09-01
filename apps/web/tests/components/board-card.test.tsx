@@ -117,6 +117,56 @@ describe('BoardCard', () => {
         expect(screen.queryByLabelText('Delete board')).not.toBeInTheDocument();
     });
 
+    it('uses the card background when no colour is set', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        const { container } = render(
+            <BoardCard
+                board={makeBoard({ color: null })}
+                onDelete={vi.fn()}
+                onOpenSettings={vi.fn()}
+            />
+        );
+
+        const card = container.querySelector('a');
+        expect(card?.style.background).toBe('');
+    });
+
+    it('applies the board colour variable when set', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        const { container } = render(
+            <BoardCard
+                board={makeBoard({ color: 'amber' })}
+                onDelete={vi.fn()}
+                onOpenSettings={vi.fn()}
+            />
+        );
+
+        const card = container.querySelector('a');
+        expect(card?.style.background).toContain('--board-amber');
+        // Muted text must be overridden on tinted cards: the default grey
+        // falls below the 4.5 AA floor against every palette tint.
+        expect(card?.style.getPropertyValue('--muted-foreground')).toBe(
+            'var(--board-muted-foreground)'
+        );
+    });
+
+    it('ignores a colour that is not in the palette', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        const { container } = render(
+            <BoardCard
+                board={makeBoard({ color: 'url(evil)' })}
+                onDelete={vi.fn()}
+                onOpenSettings={vi.fn()}
+            />
+        );
+
+        const card = container.querySelector('a');
+        expect(card?.style.background).toBe('');
+    });
+
     it('omits the description paragraph when there is none', async () => {
         const { BoardCard } = await import('@/components/dashboard/board-card');
 

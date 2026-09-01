@@ -10,6 +10,11 @@ import {
     useRemoveMember,
 } from '@/lib/hooks/use-queries';
 import type { Board } from '@/lib/types';
+import {
+    BOARD_COLORS,
+    BOARD_COLOR_LABELS,
+    type BoardColor,
+} from '@/lib/boards/board-colors';
 
 const inputClass =
     'mt-1 block w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]';
@@ -25,12 +30,14 @@ export function BoardSettingsModal({
     const [description, setDescription] = useState('');
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState<'EDITOR' | 'VIEWER'>('VIEWER');
+    const [color, setColor] = useState<BoardColor | null>(null);
 
     // Re-seed the form whenever a different board is opened.
     useEffect(() => {
         if (board) {
             setTitle(board.title);
             setDescription(board.description ?? '');
+            setColor((board.color as BoardColor | null) ?? null);
         }
     }, [board]);
 
@@ -48,7 +55,7 @@ export function BoardSettingsModal({
         if (!title.trim()) return;
 
         updateBoard.mutate(
-            { title: title.trim(), description: description.trim() },
+            { title: title.trim(), description: description.trim(), color },
             { onSuccess: onClose }
         );
     };
@@ -98,6 +105,40 @@ export function BoardSettingsModal({
                         placeholder="What's this board for?"
                         className={`${inputClass} resize-none`}
                     />
+                </div>
+
+                <div>
+                    <span className="block text-sm font-medium text-[var(--foreground)]">
+                        Colour
+                    </span>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setColor(null)}
+                            aria-label="No colour"
+                            aria-pressed={color === null}
+                            className={`h-8 w-8 rounded-full border-2 bg-[var(--card)] transition-all ${
+                                color === null
+                                    ? 'border-[var(--accent)] scale-110'
+                                    : 'border-[var(--border)]'
+                            }`}
+                        />
+                        {BOARD_COLORS.map((swatch) => (
+                            <button
+                                key={swatch}
+                                type="button"
+                                onClick={() => setColor(swatch)}
+                                aria-label={BOARD_COLOR_LABELS[swatch]}
+                                aria-pressed={color === swatch}
+                                style={{ background: `var(--board-${swatch})` }}
+                                className={`h-8 w-8 rounded-full border-2 transition-all ${
+                                    color === swatch
+                                        ? 'border-[var(--accent)] scale-110'
+                                        : 'border-[var(--border)]'
+                                }`}
+                            />
+                        ))}
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">

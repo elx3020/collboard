@@ -12,6 +12,18 @@
   --accent: #FEE35C;
   --accent-foreground: #111827;
   --destructive: #FE7F5C;
+
+  /* Board personalisation tints — paired with .dark below so board text
+     stays readable in either theme. */
+  --board-amber: #FEF3C7;
+  --board-sky: #E0F2FE;
+  --board-emerald: #D1FAE5;
+  --board-rose: #FFE4E6;
+  --board-violet: #EDE9FE;
+  /* Muted text on a tinted card. The default --muted-foreground (#6b7280)
+     measures 4.26–4.34 against these tints — under the 4.5 AA floor for
+     14px text — so coloured cards override it locally. */
+  --board-muted-foreground: #4B5563;
 }
 
 .dark {
@@ -25,6 +37,13 @@
   --accent: #F2A01F;
   --accent-foreground: #111827;
   --destructive: #F84242;
+
+  --board-amber: #78350F;
+  --board-sky: #0C4A6E;
+  --board-emerald: #064E3B;
+  --board-rose: #881337;
+  --board-violet: #4C1D95;
+  --board-muted-foreground: #D1D5DB;
 }
 
 body {
