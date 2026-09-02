@@ -1,8 +1,8 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { Modal } from '@/components/modal';
-import { PriorityBadge, Avatar, Spinner } from '@/components/ui-shared';
+import { Avatar, Spinner } from '@/components/ui-shared';
 import {
     useComments,
     useCreateComment,
@@ -10,7 +10,7 @@ import {
     useUpdateTask,
     useDeleteTask,
 } from '@/lib/hooks/use-queries';
-import type { Task, Priority } from '@/lib/types';
+import type { Task, Priority, UpdateTaskRequest } from '@/lib/types';
 
 interface TaskDetailModalProps {
     open: boolean;
@@ -20,11 +20,11 @@ interface TaskDetailModalProps {
 }
 
 export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModalProps) {
-    const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(task.title);
     const [editDescription, setEditDescription] = useState(task.description || '');
     const [editPriority, setEditPriority] = useState<Priority>(task.priority);
     const [commentText, setCommentText] = useState('');
+    const deletedRef = useRef(false);
 
     const { data: comments, isLoading: commentsLoading } = useComments(boardId, task.id);
     const createComment = useCreateComment(boardId, task.id);
@@ -32,20 +32,32 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
     const updateTask = useUpdateTask(boardId);
     const deleteTask = useDeleteTask(boardId);
 
-    const handleSave = async () => {
-        await updateTask.mutateAsync({
-            taskId: task.id,
-            data: {
-                title: editTitle.trim(),
-                description: editDescription.trim() || undefined,
-                priority: editPriority,
-            },
-        });
-        setIsEditing(false);
+    /** Only the fields that actually changed — empty object means no API call. */
+    const getChanges = (): UpdateTaskRequest => {
+        const changes: UpdateTaskRequest = {};
+        const title = editTitle.trim();
+        const description = editDescription.trim();
+
+        if (title && title !== task.title) changes.title = title;
+        if (description !== (task.description || '').trim()) changes.description = description;
+        if (editPriority !== task.priority) changes.priority = editPriority;
+
+        return changes;
+    };
+
+    const handleClose = () => {
+        if (!deletedRef.current) {
+            const changes = getChanges();
+            if (Object.keys(changes).length > 0) {
+                updateTask.mutate({ taskId: task.id, data: changes });
+            }
+        }
+        onClose();
     };
 
     const handleDelete = async () => {
         if (!confirm('Delete this task?')) return;
+        deletedRef.current = true;
         await deleteTask.mutateAsync(task.id);
         onClose();
     };
@@ -58,26 +70,29 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
     };
 
     return (
-        <Modal open={open} onClose={onClose} title={isEditing ? 'Edit Task' : task.title} size="lg">
+        <Modal open={open} onClose={handleClose} title={task.title} size="lg">
             <div className="space-y-5">
-                {/* Task Details */}
-                {isEditing ? (
-                    <div className="space-y-3">
-                        <input
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                        />
-                        <textarea
-                            value={editDescription}
-                            onChange={(e) => setEditDescription(e.target.value)}
-                            rows={3}
-                            placeholder="Add description..."
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-none"
-                        />
+                {/* Task Details — always editable, saved on close */}
+                <div className="space-y-3">
+                    <input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        aria-label="Task title"
+                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                    />
+                    <textarea
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        rows={3}
+                        placeholder="Add description..."
+                        aria-label="Task description"
+                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-none"
+                    />
+                    <div className="flex flex-wrap items-center gap-3">
                         <select
                             value={editPriority}
                             onChange={(e) => setEditPriority(e.target.value as Priority)}
+                            aria-label="Task priority"
                             className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
                         >
                             <option value="LOW">Low</option>
@@ -85,63 +100,24 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                             <option value="HIGH">High</option>
                             <option value="URGENT">Urgent</option>
                         </select>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={handleSave}
-                                disabled={updateTask.isPending}
-                                className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50"
-                            >
-                                {updateTask.isPending ? 'Saving...' : 'Save'}
-                            </button>
-                            <button
-                                onClick={() => setIsEditing(false)}
-                                className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)]"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <PriorityBadge priority={task.priority} />
-                            {task.assignee && (
-                                <div className="flex items-center gap-1.5">
-                                    <Avatar src={task.assignee.image} name={task.assignee.name} size="sm" />
-                                    <span className="text-sm text-[var(--muted-foreground)]">
-                                        {task.assignee.name || task.assignee.email}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
 
-                        {task.description && (
-                            <p className="text-sm text-[var(--foreground)] whitespace-pre-wrap">
-                                {task.description}
-                            </p>
+                        {task.assignee && (
+                            <div className="flex items-center gap-1.5">
+                                <Avatar src={task.assignee.image} name={task.assignee.name} size="sm" />
+                                <span className="text-sm text-[var(--muted-foreground)]">
+                                    {task.assignee.name || task.assignee.email}
+                                </span>
+                            </div>
                         )}
 
-                        <div className="mt-3 flex gap-2">
-                            <button
-                                onClick={() => {
-                                    setEditTitle(task.title);
-                                    setEditDescription(task.description || '');
-                                    setEditPriority(task.priority);
-                                    setIsEditing(true);
-                                }}
-                                className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="rounded-lg border border-red-300 dark:border-red-800 px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            >
-                                Delete
-                            </button>
-                        </div>
+                        <button
+                            onClick={handleDelete}
+                            className="ml-auto rounded-lg border border-red-300 dark:border-red-800 px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                            Delete
+                        </button>
                     </div>
-                )}
+                </div>
 
                 {/* Divider */}
                 <div className="border-t border-[var(--border)]" />
