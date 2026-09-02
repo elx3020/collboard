@@ -308,8 +308,14 @@ jobs:
           echo "==> Pulling images"
           docker compose -f docker-compose.prod.yml pull web migrate caddy
 
+          # `docker compose run` and `exec` attach the container to this
+          # shell's stdin — which IS the deploy script (ssh feeds it to
+          # `bash -s`). Without `< /dev/null` the container swallows every
+          # remaining line, bash hits EOF and exits 0, so the step reports
+          # success having never restarted anything. `-T` alone does NOT
+          # prevent this; the redirect is what matters.
           echo "==> Applying migrations"
-          docker compose -f docker-compose.prod.yml run --rm migrate
+          docker compose -f docker-compose.prod.yml run --rm -T migrate < /dev/null
 
           echo "==> Restarting services"
           docker compose -f docker-compose.prod.yml up -d --no-deps web caddy
@@ -318,7 +324,7 @@ jobs:
           echo "==> Waiting for health check"
           for i in $(seq 1 20); do
             if docker compose -f docker-compose.prod.yml exec -T web \
-                 wget --spider -q http://localhost:3000/api/health; then
+                 wget --spider -q http://localhost:3000/api/health < /dev/null; then
               echo "Health check passed after $((i * 5))s"
               docker image prune -f
               echo "Deploy complete"
