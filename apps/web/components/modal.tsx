@@ -74,7 +74,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     return (
         <div
             ref={overlayRef}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            className="fixed inset-0 z-50  flex items-center justify-center bg-black/50 p-4"
             onClick={(e) => {
                 if (e.target === overlayRef.current) onClose();
             }}
@@ -90,7 +90,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
                 )}
             >
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-[var(--foreground)]">
+                    <h2 className="text-2xl font-semibold text-[var(--foreground)]">
                         {title}
                     </h2>
                     <button
