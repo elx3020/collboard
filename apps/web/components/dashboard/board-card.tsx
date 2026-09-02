@@ -59,9 +59,9 @@ export function BoardCard({
     // AA floor against these tints.
     const colorStyle = color
         ? ({
-              background: `var(--board-${color})`,
-              '--muted-foreground': 'var(--board-muted-foreground)',
-          } as React.CSSProperties)
+            background: `var(--board-${color})`,
+            '--muted-foreground': 'var(--board-muted-foreground)',
+        } as React.CSSProperties)
         : undefined;
 
     return (
@@ -126,7 +126,7 @@ export function BoardCard({
             </h3>
 
             {board.description && (
-                <p className="mt-1 line-clamp-2 text-sm text-[var(--muted-foreground)]">
+                <p className="mt-1 line-clamp-4 text-sm text-[var(--muted-foreground)]">
                     {board.description}
                 </p>
             )}

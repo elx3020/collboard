@@ -79,7 +79,7 @@ export function TaskCard({ task, onClick, isDragOverlay }: TaskCardProps) {
 
             {/* Description preview */}
             {task.description && (
-                <p className="mt-1 text-xs text-[var(--muted-foreground)] line-clamp-2">
+                <p className="mt-1 text-xs text-[var(--muted-foreground)] line-clamp-4">
                     {task.description}
                 </p>
             )}

@@ -72,94 +72,9 @@ export function BoardSettingsModal({
 
     return (
         <Modal open={!!board} onClose={onClose} title="Board Settings">
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label
-                        htmlFor="board-settings-title"
-                        className="block text-sm font-medium text-[var(--foreground)]"
-                    >
-                        Name
-                    </label>
-                    <input
-                        id="board-settings-title"
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                        className={inputClass}
-                    />
-                </div>
 
-                <div>
-                    <label
-                        htmlFor="board-settings-description"
-                        className="block text-sm font-medium text-[var(--foreground)]"
-                    >
-                        Description
-                    </label>
-                    <textarea
-                        id="board-settings-description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={3}
-                        placeholder="What's this board for?"
-                        className={`${inputClass} resize-none`}
-                    />
-                </div>
 
-                <div>
-                    <span className="block text-sm font-medium text-[var(--foreground)]">
-                        Colour
-                    </span>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setColor(null)}
-                            aria-label="No colour"
-                            aria-pressed={color === null}
-                            className={`h-8 w-8 rounded-full border-2 bg-[var(--card)] transition-all ${
-                                color === null
-                                    ? 'border-[var(--accent)] scale-110'
-                                    : 'border-[var(--border)]'
-                            }`}
-                        />
-                        {BOARD_COLORS.map((swatch) => (
-                            <button
-                                key={swatch}
-                                type="button"
-                                onClick={() => setColor(swatch)}
-                                aria-label={BOARD_COLOR_LABELS[swatch]}
-                                aria-pressed={color === swatch}
-                                style={{ background: `var(--board-${swatch})` }}
-                                className={`h-8 w-8 rounded-full border-2 transition-all ${
-                                    color === swatch
-                                        ? 'border-[var(--accent)] scale-110'
-                                        : 'border-[var(--border)]'
-                                }`}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={updateBoard.isPending || !title.trim()}
-                        className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
-                    >
-                        {updateBoard.isPending ? 'Saving...' : 'Save Changes'}
-                    </button>
-                </div>
-            </form>
-
-            <div className="mt-6 border-t border-[var(--border)] pt-4">
+            <div className="my-6">
                 <h3 className="text-sm font-medium text-[var(--foreground)]">Members</h3>
 
                 <div className="mt-2 flex gap-2">
@@ -242,6 +157,92 @@ export function BoardSettingsModal({
                     </p>
                 )}
             </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label
+                        htmlFor="board-settings-title"
+                        className="block text-sm font-medium text-[var(--foreground)]"
+                    >
+                        Name
+                    </label>
+                    <input
+                        id="board-settings-title"
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        required
+                        className={inputClass}
+                    />
+                </div>
+
+                <div>
+                    <label
+                        htmlFor="board-settings-description"
+                        className="block text-sm font-medium text-[var(--foreground)]"
+                    >
+                        Description
+                    </label>
+                    <textarea
+                        id="board-settings-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={5}
+                        placeholder="What's this board for?"
+                        className={`${inputClass} resize-none`}
+                    />
+                </div>
+
+                <div>
+                    <span className="block text-sm font-medium text-[var(--foreground)]">
+                        Colour
+                    </span>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setColor(null)}
+                            aria-label="No colour"
+                            aria-pressed={color === null}
+                            className={`h-8 w-8 rounded-full border-2 bg-[var(--card)] transition-all ${color === null
+                                ? 'border-[var(--accent)] scale-110'
+                                : 'border-[var(--border)]'
+                                }`}
+                        />
+                        {BOARD_COLORS.map((swatch) => (
+                            <button
+                                key={swatch}
+                                type="button"
+                                onClick={() => setColor(swatch)}
+                                aria-label={BOARD_COLOR_LABELS[swatch]}
+                                aria-pressed={color === swatch}
+                                style={{ background: `var(--board-${swatch})` }}
+                                className={`h-8 w-8 rounded-full border-2 transition-all ${color === swatch
+                                    ? 'border-[var(--accent)] scale-110'
+                                    : 'border-[var(--border)]'
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={updateBoard.isPending || !title.trim()}
+                        className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                        {updateBoard.isPending ? 'Saving...' : 'Save Changes'}
+                    </button>
+                </div>
+            </form>
+
         </Modal>
     );
 }
