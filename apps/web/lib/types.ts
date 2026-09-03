@@ -13,6 +13,7 @@ export enum EventType {
   COMMENT_DELETED = 'comment:deleted',
   USER_JOINED = 'user:joined',
   USER_LEFT = 'user:left',
+  NOTIFICATION_CREATED = 'notification:created',
 }
 
 /**
@@ -20,6 +21,8 @@ export enum EventType {
  */
 export const CHANNELS = {
   BOARD: (boardId: string) => `board:${boardId}`,
+  /** Per-user channel. ws-server psubscribes 'user:*' and routes to that user's sockets. */
+  USER: (userId: string) => `user:${userId}`,
   TASK_MOVED: (boardId: string) => `board:${boardId}:task-moved`,
   COMMENT_ADDED: (boardId: string) => `board:${boardId}:comment-added`,
   USER_PRESENCE: (boardId: string) => `board:${boardId}:presence`,
@@ -80,6 +83,7 @@ export interface WsServerEventMap {
   [EventType.COMMENT_DELETED]: CommentDeletedPayload;
   [EventType.USER_JOINED]: UserPresencePayload;
   [EventType.USER_LEFT]: UserPresencePayload;
+  [EventType.NOTIFICATION_CREATED]: NotificationCreatedPayload;
   error: { message: string };
 }
 
@@ -190,6 +194,59 @@ export interface Comment {
   createdAt: string;
   updatedAt: string;
   user: UserSummary;
+}
+
+/**
+ * A notice sent to one member, distinct from `EventType` above.
+ *
+ * `EventType` is board *sync* — it keeps every viewer of a board, including a
+ * user's own other tabs, showing the same state, and travels on `board:<id>`.
+ * These are notices that someone needs a member's attention, travel on
+ * `user:<id>`, and never go to the person who caused them. The names are
+ * chosen so the two families cannot be confused at a call site.
+ */
+export type NotificationType =
+  | 'TASK_ASSIGNED'
+  | 'TASK_COMMENTED'
+  | 'BOARD_INVITED'
+  | 'BOARD_ROLE_CHANGED'
+  | 'BOARD_TASK_ADDED'
+  | 'BOARD_TASK_REMOVED';
+
+/** Type-specific extras. Only BOARD_ROLE_CHANGED uses one today. */
+export interface NotificationMeta {
+  role?: Role;
+}
+
+/**
+ * Named `AppNotification` because `Notification` is a DOM global — shadowing it
+ * inside a client component is a real source of confusion. The Prisma model is
+ * still called `Notification`.
+ */
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  actorId: string | null;
+  boardId: string | null;
+  taskId: string | null;
+  actorName: string | null;
+  boardTitle: string | null;
+  taskTitle: string | null;
+  meta: NotificationMeta | null;
+  readAt: string | null;
+  createdAt: string;
+  actor: UserSummary | null;
+}
+
+/** One page of GET /api/notifications. */
+export interface NotificationPage {
+  items: AppNotification[];
+  nextCursor: string | null;
+  unreadCount: number;
+}
+
+export interface NotificationCreatedPayload {
+  notification: AppNotification;
 }
 
 // ─── API Request Types ─────────────────────────────────────────────────────────
