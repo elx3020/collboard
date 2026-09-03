@@ -32,6 +32,8 @@ model User {
   tasks         Task[]    @relation("TaskAssignee")
   comments      Comment[]
   refreshTokens RefreshToken[]
+  notifications      Notification[] @relation("NotificationRecipient")
+  notificationsActed Notification[] @relation("NotificationActor")
 }
 
 // OAuth Account model (NextAuth.js)
@@ -200,4 +202,43 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+// Notification model - one row per recipient per event
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  actorId    String?
+
+  // Targets are plain columns, NOT foreign keys: a cascade from Task would
+  // delete the very notification announcing that task's deletion.
+  boardId    String?
+  taskId     String?
+
+  // Display snapshots, so a notification outlives its subject
+  actorName  String?
+  boardTitle String?
+  taskTitle  String?
+  meta       Json?
+
+  readAt     DateTime?
+  deleteAt   DateTime?
+  createdAt  DateTime         @default(now())
+
+  user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@index([deleteAt])
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_COMMENTED
+  BOARD_INVITED
+  BOARD_ROLE_CHANGED
+  BOARD_TASK_ADDED
+  BOARD_TASK_REMOVED
 }
