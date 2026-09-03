@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ConnectionStatus } from '@/lib/hooks/use-board-realtime';
 import { GridIcon } from '@/components/icons';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 export function Navbar() {
     const { data: session } = useSession();
@@ -25,6 +26,7 @@ export function Navbar() {
                 {/* Right side */}
                 <div className="flex items-center gap-3">
                     <ConnectionStatus />
+                    <NotificationBell />
                     <ThemeToggle />
 
                     {session?.user && (

@@ -9,6 +9,7 @@
 export { StrokeIcon, FillIcon, type IconProps } from './icon';
 
 export { AlertTriangleIcon } from './alert-triangle-icon';
+export { BellIcon } from './bell-icon';
 export { ChevronDownIcon } from './chevron-down-icon';
 export { ChevronLeftIcon } from './chevron-left-icon';
 export { CloseIcon } from './close-icon';

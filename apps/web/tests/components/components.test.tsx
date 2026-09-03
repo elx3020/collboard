@@ -42,6 +42,12 @@ vi.mock('@/lib/hooks/use-board-realtime', () => ({
     ConnectionStatus: () => <span data-testid="connection-status">Connected</span>,
 }));
 
+// Mock the notification bell — it needs a QueryClient and a socket, and has its
+// own test file. Same treatment as ConnectionStatus above.
+vi.mock('@/components/notifications/notification-bell', () => ({
+    NotificationBell: () => <span data-testid="notification-bell" />,
+}));
+
 // Mock next-themes
 vi.mock('next-themes', () => ({
     useTheme: () => ({ theme: 'light', setTheme: vi.fn() }),
