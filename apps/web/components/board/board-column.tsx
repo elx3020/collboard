@@ -10,6 +10,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { clsx } from 'clsx';
 import { useState } from 'react';
 import { TaskCard } from '@/components/board/task-card';
+import { CloseIcon, PlusIcon } from '@/components/icons';
 import type { Column as ColumnType, Task } from '@/lib/types';
 
 interface BoardColumnProps {
@@ -116,17 +117,7 @@ export function BoardColumn({
                         className="rounded-md p-1 text-[var(--muted-foreground)] hover:bg-[var(--background)] hover:text-[var(--foreground)] transition-colors"
                         aria-label={`Add task to ${column.title}`}
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                        >
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
+                        <PlusIcon />
                     </button>
                     {onDeleteColumn && (
                         <button
@@ -138,17 +129,7 @@ export function BoardColumn({
                             className="rounded-md p-1 text-[var(--muted-foreground)] hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 transition-colors"
                             aria-label={`Delete column ${column.title}`}
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                            >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
+                            <CloseIcon />
                         </button>
                     )}
                 </div>

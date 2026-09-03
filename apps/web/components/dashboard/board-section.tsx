@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { Board } from '@/lib/types';
 import type { BoardGroupKey } from '@/lib/boards/group-boards';
 import { BoardCard } from '@/components/dashboard/board-card';
+import { ChevronDownIcon } from '@/components/icons';
 
 const STORAGE_KEY = 'collboard.dashboard.collapsed';
 
@@ -30,24 +31,6 @@ function writeCollapsed(ids: string[]) {
         // Storage unavailable — collapsing still works for this session,
         // it just will not be remembered.
     }
-}
-
-function ChevronIcon({ collapsed }: { collapsed: boolean }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className={`h-4 w-4 transition-transform ${collapsed ? '-rotate-90' : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-        >
-            <polyline points="6 9 12 15 18 9" />
-        </svg>
-    );
 }
 
 export function BoardSection({
@@ -94,7 +77,9 @@ export function BoardSection({
                     aria-controls={bodyId}
                     className="flex items-center gap-2 rounded-lg py-1 text-sm font-semibold uppercase tracking-wide text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
                 >
-                    <ChevronIcon collapsed={collapsed} />
+                    <ChevronDownIcon
+                        className={`h-4 w-4 transition-transform ${collapsed ? '-rotate-90' : ''}`}
+                    />
                     <span>{title}</span>
                     <span className="text-xs font-normal normal-case tracking-normal">
                         {boards.length}

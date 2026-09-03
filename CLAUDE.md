@@ -88,4 +88,9 @@ Manual "Run workflow" button on the Actions tab (`workflow_dispatch`; build and 
 - `@/*` maps to `apps/web/*`.
 - Husky pre-commit runs `npm run lint`; lint-staged additionally runs `eslint --fix` and Prettier on staged files. Lint is `--max-warnings 0` everywhere, and `eslint-plugin-only-warn` downgrades errors to warnings — so _any_ lint finding fails the build.
 - Vitest defaults to the `node` environment; component tests opt in with a `// @vitest-environment happy-dom` comment on line 1. Integration tests mock `@/lib/prisma` and `next-auth/next` rather than hitting a database.
+- Icons live in `components/icons/` — one file per glyph, one definition per glyph, re-exported
+  from the `@/components/icons` barrel. Never inline an `<svg>` in a feature component; add an
+  icon to the library instead. Each icon takes `IconProps` (all `<svg>` props) and spreads them
+  last over the `StrokeIcon`/`FillIcon` base, so size, colour and stroke width stay with the call
+  site. Icons default to `aria-hidden` — icon-only controls carry their own `aria-label`.
 - Server-side logging goes through `lib/logger.ts` (pino), not `console`.

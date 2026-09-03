@@ -18,6 +18,7 @@ import { Navbar } from '@/components/navbar';
 import { BoardColumn } from '@/components/board/board-column';
 import { TaskCardOverlay } from '@/components/board/task-card';
 import { Spinner, EmptyState } from '@/components/ui-shared';
+import { ChevronLeftIcon, PlusIcon, SearchIcon } from '@/components/icons';
 import {
   useBoard,
   useCreateColumn,
@@ -213,16 +214,7 @@ export default function BoardPage() {
               className="rounded-lg p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors"
               aria-label="Back to dashboard"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
+              <ChevronLeftIcon className="h-5 w-5" />
             </button>
             <div>
               <h1 className="text-lg font-bold text-[var(--foreground)]">
@@ -240,17 +232,7 @@ export default function BoardPage() {
           <div className="flex items-center gap-2">
             <ConnectionStatus />
             <div className="relative">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
               <input
                 type="text"
                 value={searchQuery}
@@ -343,17 +325,7 @@ export default function BoardPage() {
                   onClick={() => setAddingColumn(true)}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted-foreground)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
+                  <PlusIcon />
                   Add Column
                 </button>
               )}
