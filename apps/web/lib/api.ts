@@ -14,6 +14,7 @@ import type {
   MoveTaskRequest,
   CreateCommentRequest,
   InviteMemberRequest,
+  NotificationPage,
 } from '@/lib/types';
 
 // ─── Generic Fetch Wrapper ─────────────────────────────────────────────────────
@@ -159,4 +160,19 @@ export const membersApi = {
       method: 'PATCH',
       body: JSON.stringify({ role }),
     }),
+};
+
+// ─── Notifications ─────────────────────────────────────────────────────────────
+
+export const notificationsApi = {
+  list: (cursor?: string | null, limit = 5) =>
+    apiFetch<NotificationPage>(
+      `/api/notifications?limit=${limit}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`
+    ),
+
+  markRead: (id: string) =>
+    apiFetch<{ message: string }>(`/api/notifications/${id}/read`, { method: 'PATCH' }),
+
+  markAllRead: () =>
+    apiFetch<{ count: number }>('/api/notifications/read-all', { method: 'PATCH' }),
 };

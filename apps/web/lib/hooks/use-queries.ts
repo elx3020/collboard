@@ -2,11 +2,12 @@
 
 import {
   useQuery,
+  useInfiniteQuery,
   useMutation,
   useQueryClient,
   type UseQueryOptions,
 } from '@tanstack/react-query';
-import { boardsApi, columnsApi, tasksApi, commentsApi, membersApi } from '@/lib/api';
+import { boardsApi, columnsApi, tasksApi, commentsApi, membersApi, notificationsApi } from '@/lib/api';
 import type {
   Board,
   CreateBoardRequest,
@@ -18,6 +19,7 @@ import type {
   MoveTaskRequest,
   CreateCommentRequest,
   InviteMemberRequest,
+  NotificationPage,
 } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -33,6 +35,7 @@ export const queryKeys = {
   comments: (boardId: string, taskId: string) =>
     ['boards', boardId, 'tasks', taskId, 'comments'] as const,
   members: (boardId: string) => ['boards', boardId, 'members'] as const,
+  notifications: ['notifications'] as const,
 };
 
 // ─── Boards ────────────────────────────────────────────────────────────────────
@@ -277,6 +280,35 @@ export function useRemoveMember(boardId: string) {
       qc.invalidateQueries({ queryKey: queryKeys.boards });
       toast.success('Member removed');
     },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+// ─── Notifications ─────────────────────────────────────────────────────────────
+
+export function useNotifications() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.notifications,
+    queryFn: ({ pageParam }) => notificationsApi.list(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last: NotificationPage) => last.nextCursor,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => notificationsApi.markRead(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.notifications }),
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => notificationsApi.markAllRead(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.notifications }),
     onError: (err: Error) => toast.error(err.message),
   });
 }
