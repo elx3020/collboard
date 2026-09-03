@@ -23,7 +23,7 @@
 - All colours come from CSS variables (`var(--foreground)`, `var(--card)`, `var(--accent)`, `var(--muted-foreground)`, `var(--border)`, `var(--destructive)`). Never hardcode a hex or a Tailwind palette colour in a component.
 - Icons live in `components/icons/`, one file per glyph, re-exported from the barrel. Never inline an `<svg>` in a feature component.
 - Adding a real-time event means touching four places: `EventType` + payload type in `lib/types.ts`, the publish call, the `on(...)` wiring in a hook, and the consumer's callback.
-- Local infra must be up for anything touching the database: `docker-compose up -d` from the repo root (Postgres 5432, Redis 6379).
+- Local infra must be up for anything touching the database: `docker compose up -d` from the repo root (Compose v2 — there is no `docker-compose` binary on this machine). Postgres 5432 (user/db `collboard`), Redis 6379.
 
 ## Naming note
 
@@ -105,7 +105,7 @@ touched.
 - [ ] **Step 1: Confirm local infra is running**
 
 ```bash
-cd /home/elx3020/collboard && docker-compose up -d && cd apps/web
+cd /home/elx3020/collboard && docker compose up -d && cd apps/web
 ```
 
 Expected: Postgres and Redis containers up. If `docker-compose` reports them already running, that is fine.
@@ -405,10 +405,16 @@ export type NotificationType =
   | 'BOARD_TASK_ADDED'
   | 'BOARD_TASK_REMOVED';
 
-/** Type-specific extras. Only BOARD_ROLE_CHANGED uses one today. */
-export interface NotificationMeta {
+/**
+ * Type-specific extras. Only BOARD_ROLE_CHANGED uses one today.
+ *
+ * A type alias rather than an interface on purpose: Prisma's `InputJsonValue`
+ * requires an implicit index signature, which TypeScript grants to aliases but
+ * not to interfaces. As an interface this fails to assign in `notify()`.
+ */
+export type NotificationMeta = {
   role?: Role;
-}
+};
 
 /**
  * Named `AppNotification` because `Notification` is a DOM global — shadowing it
@@ -2458,7 +2464,7 @@ After every task is complete, from `apps/web`:
 - [ ] `npm run lint` passes with no output
 - [ ] `npx vitest run` — all tests pass, including the 92 that existed before this plan
 - [ ] `npm run build` succeeds
-- [ ] `docker-compose up -d` from the repo root, then the manual two-account run in Task 14 Step 4
+- [ ] `docker compose up -d` from the repo root, then the manual two-account run in Task 14 Step 4
 
 ## Notes for the reviewer
 
