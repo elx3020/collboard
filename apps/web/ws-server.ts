@@ -29,6 +29,16 @@ const rooms = new Map<string, Set<WebSocketWithMeta>>();
 /** Metadata attached to each socket */
 const meta = new WeakMap<WebSocketWithMeta, SocketMeta>();
 
+/**
+ * Per-user set of connected sockets.
+ *
+ * Unlike board rooms there is no join message: userId is attached during the
+ * upgrade-time auth, so every authenticated socket is implicitly in its own
+ * user room from the moment it connects. A user may have several sockets (two
+ * tabs), hence a set.
+ */
+const userRooms = new Map<string, Set<WebSocketWithMeta>>();
+
 // ─── Room helpers ──────────────────────────────────────────────────────────────
 
 function joinRoom(ws: WebSocketWithMeta, boardId: string) {
@@ -85,6 +95,32 @@ function broadcastToRoom(boardId: string, exclude: WebSocket | null, msg: object
   }
 }
 
+function joinUserRoom(ws: WebSocketWithMeta, userId: string) {
+  if (!userRooms.has(userId)) userRooms.set(userId, new Set());
+  userRooms.get(userId)!.add(ws);
+}
+
+function leaveUserRoom(ws: WebSocketWithMeta, userId: string) {
+  const room = userRooms.get(userId);
+  if (!room) return;
+
+  room.delete(ws);
+  if (room.size === 0) userRooms.delete(userId);
+}
+
+/** Send a JSON message to every socket belonging to one user. */
+function sendToUser(userId: string, msg: object) {
+  const room = userRooms.get(userId);
+  if (!room) return;
+
+  const payload = JSON.stringify(msg);
+  for (const client of room) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  }
+}
+
 /** Send a JSON message to a single socket */
 function send(ws: WebSocket, msg: object) {
   if (ws.readyState === WebSocket.OPEN) {
@@ -120,6 +156,7 @@ const wss = new WebSocketServer({ noServer: true, WebSocket: WebSocketWithMeta }
 wss.on('connection', (ws: WebSocketWithMeta) => {
   const m = ws.__meta;
   meta.set(ws, m);
+  joinUserRoom(ws, m.userId);
 
   logger.info(`User connected: ${m.userId}`);
 
@@ -148,12 +185,14 @@ wss.on('connection', (ws: WebSocketWithMeta) => {
 
   // Handle close
   ws.on('close', () => {
+    leaveUserRoom(ws, m.userId);
     leaveRoom(ws);
     logger.info(`User disconnected: ${m.userId}`);
   });
 
   ws.on('error', (err) => {
     logger.error({ err, userId: m.userId }, 'WebSocket error');
+    leaveUserRoom(ws, m.userId);
     leaveRoom(ws);
   });
 
@@ -209,7 +248,7 @@ wss.on('close', () => clearInterval(heartbeat));
 function setupRedisSubscriptions() {
   const subscriber = getRedisSubscriber();
 
-  subscriber.psubscribe('board:*', (err, count) => {
+  subscriber.psubscribe('board:*', 'user:*', (err, count) => {
     if (err) {
       logger.error({ err }, 'Failed to subscribe to Redis channels');
       return;
@@ -220,17 +259,23 @@ function setupRedisSubscriptions() {
   subscriber.on('pmessage', (_pattern: string, channel: string, message: string) => {
     try {
       const event = JSON.parse(message);
-      const boardId = channel.split(':')[1];
+      const [scope, id] = channel.split(':');
 
-      if (!boardId) {
+      if (!id) {
         logger.error({ channel }, 'Invalid channel format');
         return;
       }
 
-      // Broadcast to all clients in the board room
-      broadcastToRoom(boardId, null, { type: event.type, data: event.data });
+      if (scope === 'user') {
+        sendToUser(id, { type: event.type, data: event.data });
+        logger.debug(`Delivering ${event.type} to user ${id}`);
+        return;
+      }
 
-      logger.debug(`Broadcasting ${event.type} to board ${boardId}`);
+      // Board scope: broadcast to everyone in the room.
+      broadcastToRoom(id, null, { type: event.type, data: event.data });
+
+      logger.debug(`Broadcasting ${event.type} to board ${id}`);
     } catch (err) {
       logger.error({ err }, 'Error processing Redis message');
     }
