@@ -9,47 +9,12 @@ import { BoardSection } from '@/components/dashboard/board-section';
 import { groupBoards } from '@/lib/boards/group-boards';
 import { BoardSettingsModal } from '@/components/dashboard/board-settings-modal';
 import type { Board } from '@/lib/types';
+import { GridIcon, PlusIcon } from '@/components/icons';
 
 // Lazy load the modal — only downloaded when user clicks "New Board"
 const CreateBoardModal = lazy(() =>
     import('@/components/create-board-modal').then((m) => ({ default: m.CreateBoardModal }))
 );
-
-function PlusIcon() {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden="true"
-        >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-    );
-}
-
-function BoardsIcon() {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            aria-hidden="true"
-        >
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-        </svg>
-    );
-}
 
 export default function DashboardPage() {
     const { data: session } = useSession();
@@ -103,7 +68,7 @@ export default function DashboardPage() {
 
                 {boards && boards.length === 0 && (
                     <EmptyState
-                        icon={<BoardsIcon />}
+                        icon={<GridIcon className="h-12 w-12" strokeWidth={1.5} />}
                         title="No boards yet"
                         description="Create your first Kanban board to get started."
                         action={

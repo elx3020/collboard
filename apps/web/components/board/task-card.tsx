@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { clsx } from 'clsx';
 import { PriorityBadge, Avatar } from '@/components/ui-shared';
+import { CommentIcon } from '@/components/icons';
 import type { Task } from '@/lib/types';
 
 interface TaskCardProps {
@@ -57,16 +58,7 @@ export function TaskCard({ task, onClick, isDragOverlay }: TaskCardProps) {
                 <PriorityBadge priority={task.priority} />
                 {task._count?.comments ? (
                     <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3.5 w-3.5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                        >
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        </svg>
+                        <CommentIcon className="h-3.5 w-3.5" />
                         {task._count.comments}
                     </span>
                 ) : null}

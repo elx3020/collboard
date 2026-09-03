@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ConnectionStatus } from '@/lib/hooks/use-board-realtime';
+import { GridIcon } from '@/components/icons';
 
 export function Navbar() {
     const { data: session } = useSession();
@@ -17,21 +18,7 @@ export function Navbar() {
                     href="/dashboard"
                     className="flex items-center gap-2 font-bold text-lg text-[var(--foreground)]"
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-[var(--accent)]"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
-                    </svg>
+                    <GridIcon className="h-6 w-6 text-[var(--accent)]" />
                     Collboard
                 </Link>
 

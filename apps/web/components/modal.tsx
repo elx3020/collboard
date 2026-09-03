@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { CloseIcon } from '@/components/icons';
 
 interface ModalProps {
     open: boolean;
@@ -98,17 +99,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
                         className="rounded-lg p-1 text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors"
                         aria-label="Close"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                        >
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
+                        <CloseIcon className="h-5 w-5" />
                     </button>
                 </div>
                 {children}

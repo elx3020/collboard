@@ -3,6 +3,7 @@
 import { clsx } from 'clsx';
 import Image from 'next/image';
 import type { Priority } from '@/lib/types';
+import { SpinnerIcon } from '@/components/icons';
 
 const priorityConfig: Record<Priority, { label: string; color: string; bgColor: string }> = {
     URGENT: { label: 'Urgent', color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' },
@@ -65,26 +66,7 @@ export function Avatar({
 export function Spinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     const sizeClass = { sm: 'h-4 w-4', md: 'h-6 w-6', lg: 'h-8 w-8' }[size];
     return (
-        <svg
-            className={clsx('animate-spin text-[var(--accent)]', sizeClass)}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-        >
-            <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-            />
-            <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-        </svg>
+        <SpinnerIcon className={clsx('animate-spin text-[var(--accent)]', sizeClass)} />
     );
 }
 
