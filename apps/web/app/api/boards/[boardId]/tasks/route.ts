@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
 import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
 import { logger } from '@/lib/logger';
+import { notify } from '@/lib/notifications/notify';
 
 /**
  * GET /api/boards/[boardId]/tasks
@@ -127,6 +128,35 @@ export const POST = withAuth<{ boardId: string }>(async (req, { params, userId }
     });
   } catch (error) {
     logger.error({ err: error }, 'Failed to publish task created event');
+  }
+
+  const [actor, boardRow] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
+  ]);
+
+  await notify({
+    event: { type: 'BOARD_TASK_ADDED', boardId },
+    actorId: userId,
+    actorName: actor?.name ?? null,
+    boardId,
+    boardTitle: boardRow?.title ?? null,
+    taskId: task.id,
+    taskTitle: task.title,
+  });
+
+  // A task created already assigned to someone produces two notices for them:
+  // "created" and "assigned". Different facts; the assignment needs acting on.
+  if (task.assigneeId) {
+    await notify({
+      event: { type: 'TASK_ASSIGNED', assigneeId: task.assigneeId },
+      actorId: userId,
+      actorName: actor?.name ?? null,
+      boardId,
+      boardTitle: boardRow?.title ?? null,
+      taskId: task.id,
+      taskTitle: task.title,
+    });
   }
 
   return NextResponse.json(task, { status: 201 });

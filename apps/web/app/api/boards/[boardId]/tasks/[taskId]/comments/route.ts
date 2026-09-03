@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
 import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
+import { notify } from '@/lib/notifications/notify';
 
 /**
  * GET /api/boards/[boardId]/tasks/[taskId]/comments
@@ -92,6 +93,21 @@ export const POST = withAuth<{ boardId: string; taskId: string }>(async (req, { 
     console.error('Failed to publish comment added event:', error);
     // Don't fail the request if event publishing fails
   }
+
+  const [boardRow, taskRow] = await Promise.all([
+    prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
+    prisma.task.findUnique({ where: { id: taskId }, select: { title: true } }),
+  ]);
+
+  await notify({
+    event: { type: 'TASK_COMMENTED', taskId },
+    actorId: userId,
+    actorName: comment.user.name ?? null,
+    boardId,
+    boardTitle: boardRow?.title ?? null,
+    taskId,
+    taskTitle: taskRow?.title ?? null,
+  });
 
   return NextResponse.json(comment, { status: 201 });
 });

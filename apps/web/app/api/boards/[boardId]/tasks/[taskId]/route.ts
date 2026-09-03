@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
 import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
 import { logger } from '@/lib/logger';
+import { notify } from '@/lib/notifications/notify';
 
 /**
  * Helper: get a task and verify it belongs to the given board.
@@ -136,6 +137,25 @@ export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, {
     logger.error({ err: error }, 'Failed to publish task updated event');
   }
 
+  // Only a change of assignee is worth a notification: title and priority edits
+  // are not, and re-saving the same assignee must not re-notify.
+  if (assigneeId !== undefined && task.assigneeId && task.assigneeId !== existing.assigneeId) {
+    const [actor, boardRow] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
+    ]);
+
+    await notify({
+      event: { type: 'TASK_ASSIGNED', assigneeId: task.assigneeId },
+      actorId: userId,
+      actorName: actor?.name ?? null,
+      boardId,
+      boardTitle: boardRow?.title ?? null,
+      taskId: task.id,
+      taskTitle: task.title,
+    });
+  }
+
   return NextResponse.json(task);
 });
 
@@ -178,6 +198,22 @@ export const DELETE = withAuth<{ boardId: string; taskId: string }>(async (_req,
   } catch (error) {
     logger.error({ err: error }, 'Failed to publish task deleted event');
   }
+
+  const [actor, boardRow] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
+  ]);
+
+  await notify({
+    event: { type: 'BOARD_TASK_REMOVED', boardId },
+    actorId: userId,
+    actorName: actor?.name ?? null,
+    boardId,
+    boardTitle: boardRow?.title ?? null,
+    // The task is gone, so the notification links to the board instead.
+    taskId: null,
+    taskTitle: existing.title,
+  });
 
   return NextResponse.json({ message: 'Task deleted' });
 });

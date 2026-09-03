@@ -7,6 +7,7 @@ import {
   getBoardMembers,
 } from '@/lib/auth/rbac';
 import type { Role } from '@/lib/auth/rbac';
+import { notify } from '@/lib/notifications/notify';
 
 /**
  * GET /api/boards/[boardId]/members
@@ -76,6 +77,19 @@ export const POST = withAuth<{ boardId: string }>(async (req, { params, userId }
   }
 
   const member = await addBoardMember(boardId, targetUser.id, memberRole);
+
+  const [actor, boardRow] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
+  ]);
+
+  await notify({
+    event: { type: 'BOARD_INVITED', targetUserId: targetUser.id },
+    actorId: userId,
+    actorName: actor?.name ?? null,
+    boardId,
+    boardTitle: boardRow?.title ?? null,
+  });
 
   return NextResponse.json(
     {

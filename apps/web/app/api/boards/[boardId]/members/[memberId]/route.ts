@@ -7,6 +7,7 @@ import {
   removeBoardMember,
 } from '@/lib/auth/rbac';
 import type { Role } from '@/lib/auth/rbac';
+import { notify } from '@/lib/notifications/notify';
 
 /**
  * PATCH /api/boards/[boardId]/members/[memberId]
@@ -47,6 +48,20 @@ export const PATCH = withAuth<{ boardId: string; memberId: string }>(async (req,
     membership.userId,
     role
   );
+
+  const [actor, boardRow] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
+  ]);
+
+  await notify({
+    event: { type: 'BOARD_ROLE_CHANGED', targetUserId: membership.userId },
+    actorId: userId,
+    actorName: actor?.name ?? null,
+    boardId,
+    boardTitle: boardRow?.title ?? null,
+    meta: { role },
+  });
 
   return NextResponse.json(updated);
 });
