@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
+import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
+import { logger } from '@/lib/logger';
 
 /**
  * Helper: get a task and verify it belongs to the given board.
@@ -125,6 +127,15 @@ export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, {
     },
   });
 
+  try {
+    await publishEvent(CHANNELS.BOARD(boardId), {
+      type: EventType.TASK_UPDATED,
+      data: { task },
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to publish task updated event');
+  }
+
   return NextResponse.json(task);
 });
 
@@ -158,6 +169,15 @@ export const DELETE = withAuth<{ boardId: string; taskId: string }>(async (_req,
       })
     )
   );
+
+  try {
+    await publishEvent(CHANNELS.BOARD(boardId), {
+      type: EventType.TASK_DELETED,
+      data: { taskId },
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to publish task deleted event');
+  }
 
   return NextResponse.json({ message: 'Task deleted' });
 });

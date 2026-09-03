@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission, checkBoardPermission } from '@/lib/auth/rbac';
+import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
+import { logger } from '@/lib/logger';
 
 /**
  * PATCH /api/boards/[boardId]/tasks/[taskId]/comments/[commentId]
@@ -48,6 +50,15 @@ export const PATCH = withAuth<{ boardId: string; taskId: string; commentId: stri
     },
   });
 
+  try {
+    await publishEvent(CHANNELS.BOARD(boardId), {
+      type: EventType.COMMENT_UPDATED,
+      data: { comment: updated },
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to publish comment updated event');
+  }
+
   return NextResponse.json(updated);
 });
 
@@ -85,6 +96,15 @@ export const DELETE = withAuth<{ boardId: string; taskId: string; commentId: str
   }
 
   await prisma.comment.delete({ where: { id: commentId } });
+
+  try {
+    await publishEvent(CHANNELS.BOARD(boardId), {
+      type: EventType.COMMENT_DELETED,
+      data: { commentId },
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to publish comment deleted event');
+  }
 
   return NextResponse.json({ message: 'Comment deleted' });
 });

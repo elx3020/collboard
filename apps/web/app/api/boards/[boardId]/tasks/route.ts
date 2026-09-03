@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
+import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/boards/[boardId]/tasks
@@ -117,6 +119,15 @@ export const POST = withAuth<{ boardId: string }>(async (req, { params, userId }
       },
     },
   });
+
+  try {
+    await publishEvent(CHANNELS.BOARD(boardId), {
+      type: EventType.TASK_CREATED,
+      data: { task },
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to publish task created event');
+  }
 
   return NextResponse.json(task, { status: 201 });
 });
