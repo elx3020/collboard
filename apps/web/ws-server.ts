@@ -4,12 +4,14 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { getRedisSubscriber, closeRedisConnections } from './lib/redis';
 import { verifyAuthToken } from './lib/auth/tokens';
 import { logger } from './lib/logger';
+import { sweepExpiredNotifications } from './lib/notifications/sweep';
 import type { WsClientMessage } from './lib/types';
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
 const WS_PORT = parseInt(process.env.WS_PORT || '3002', 10);
 const HEARTBEAT_INTERVAL_MS = 30_000;
+const SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 // ─── Room & Socket State ───────────────────────────────────────────────────────
 
@@ -286,6 +288,20 @@ function setupRedisSubscriptions() {
   });
 }
 
+// ─── Notification Retention Sweep ──────────────────────────────────────────────
+
+function runSweep() {
+  void sweepExpiredNotifications().catch((err) => {
+    logger.error({ err }, 'Notification sweep failed');
+  });
+}
+
+// Run once at boot as well as daily: a container that restarts more often than
+// once a day would otherwise never reach the interval.
+runSweep();
+
+const sweep = setInterval(runSweep, SWEEP_INTERVAL_MS);
+
 // ─── Start ─────────────────────────────────────────────────────────────────────
 
 setupRedisSubscriptions();
@@ -300,6 +316,7 @@ async function shutdown() {
   logger.info('WS server shutting down...');
 
   clearInterval(heartbeat);
+  clearInterval(sweep);
 
   // Close all WebSocket connections
   for (const ws of wss.clients) {
