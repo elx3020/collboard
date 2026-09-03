@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState, lazy, Suspense } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   DndContext,
   DragOverlay,
@@ -68,6 +68,27 @@ export default function BoardPage() {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [addingColumn, setAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
+
+  const searchParams = useSearchParams();
+  const requestedTaskId = searchParams.get('task');
+
+  // Deep link from a notification: /boards/<id>?task=<taskId>. The board loads
+  // asynchronously, so this waits for the data rather than reading it inline.
+  // The param is cleared afterwards, otherwise closing the modal and reopening
+  // it would fight this effect re-firing.
+  useEffect(() => {
+    if (!requestedTaskId || !board) return;
+
+    const task = board.columns
+      ?.flatMap((column) => column.tasks ?? [])
+      .find((t) => t.id === requestedTaskId);
+
+    if (task) {
+      openTaskModal(task);
+    }
+
+    router.replace(`/boards/${board.id}`, { scroll: false });
+  }, [requestedTaskId, board, openTaskModal, router]);
 
   // Real-time: invalidate board query on incoming events
   useBoardRealtime(boardId, {
