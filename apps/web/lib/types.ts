@@ -213,10 +213,16 @@ export type NotificationType =
   | 'BOARD_TASK_ADDED'
   | 'BOARD_TASK_REMOVED';
 
-/** Type-specific extras. Only BOARD_ROLE_CHANGED uses one today. */
-export interface NotificationMeta {
+/**
+ * Type-specific extras. Only BOARD_ROLE_CHANGED uses one today.
+ *
+ * A type alias rather than an interface on purpose: Prisma's `InputJsonValue`
+ * requires an implicit index signature, which TypeScript grants to aliases but
+ * not to interfaces. As an interface this fails to assign in `notify()`.
+ */
+export type NotificationMeta = {
   role?: Role;
-}
+};
 
 /**
  * Named `AppNotification` because `Notification` is a DOM global — shadowing it
