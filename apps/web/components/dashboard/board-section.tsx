@@ -40,6 +40,7 @@ export function BoardSection({
     emptyHint,
     onDelete,
     onOpenSettings,
+    onLeave,
 }: {
     id: BoardGroupKey;
     title: string;
@@ -47,6 +48,7 @@ export function BoardSection({
     emptyHint: string;
     onDelete: (boardId: string) => void;
     onOpenSettings: (board: Board) => void;
+    onLeave: (board: Board) => void;
 }) {
     const [collapsed, setCollapsed] = useState(false);
 
@@ -100,6 +102,7 @@ export function BoardSection({
                                 board={board}
                                 onDelete={onDelete}
                                 onOpenSettings={onOpenSettings}
+                                onLeave={onLeave}
                             />
                         ))}
                     </div>

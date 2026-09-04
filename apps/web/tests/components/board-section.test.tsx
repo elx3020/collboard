@@ -45,6 +45,7 @@ function renderSection(boards: Board[] = []) {
             emptyHint: 'Boards you own and have invited others to.',
             onDelete: vi.fn(),
             onOpenSettings: vi.fn(),
+            onLeave: vi.fn(),
         },
     };
 }

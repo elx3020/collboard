@@ -18,6 +18,7 @@ export { CommentIcon } from './comment-icon';
 export { GitHubIcon } from './github-icon';
 export { GoogleIcon } from './google-icon';
 export { GridIcon } from './grid-icon';
+export { LeaveIcon } from './leave-icon';
 export { MoonIcon } from './moon-icon';
 export { MoreHorizontalIcon } from './more-horizontal-icon';
 export { PlusIcon } from './plus-icon';

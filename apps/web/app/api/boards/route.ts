@@ -21,7 +21,9 @@ export const GET = withAuth(async (_req, { userId }) => {
       // Only fetch the current user's membership (not all members)
       members: {
         where: { userId },
-        select: { userId: true, role: true },
+        // `id` is the BoardMember row id, which DELETE /members/[memberId]
+        // is keyed by — it is what lets a member leave the board.
+        select: { id: true, userId: true, role: true },
         take: 1,
       },
       _count: {

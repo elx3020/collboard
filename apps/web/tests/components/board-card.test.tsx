@@ -34,12 +34,34 @@ function makeBoard(overrides: Partial<Board> = {}): Board {
     };
 }
 
+/**
+ * A board owned by someone else, carrying the current user's own membership
+ * row — which is all `GET /api/boards` returns in `members`.
+ */
+function sharedBoard(overrides: Partial<Board> = {}): Board {
+    return makeBoard({
+        ownerId: 'user-9',
+        owner: { id: 'user-9', name: 'Grace', email: 'grace@example.com', image: null },
+        currentUserRole: 'EDITOR',
+        members: [
+            {
+                id: 'member-7',
+                boardId: 'board-1',
+                userId: 'user-1',
+                role: 'EDITOR',
+                createdAt: '2026-01-01T00:00:00.000Z',
+            },
+        ],
+        ...overrides,
+    });
+}
+
 describe('BoardCard', () => {
     it('renders title, description and counts', async () => {
         const { BoardCard } = await import('@/components/dashboard/board-card');
 
         render(
-            <BoardCard board={makeBoard()} onDelete={vi.fn()} onOpenSettings={vi.fn()} />
+            <BoardCard board={makeBoard()} onDelete={vi.fn()} onOpenSettings={vi.fn()} onLeave={vi.fn()} />
         );
 
         expect(screen.getByText('Q3 Roadmap')).toBeInTheDocument();
@@ -52,7 +74,7 @@ describe('BoardCard', () => {
         const { BoardCard } = await import('@/components/dashboard/board-card');
 
         render(
-            <BoardCard board={makeBoard()} onDelete={vi.fn()} onOpenSettings={vi.fn()} />
+            <BoardCard board={makeBoard()} onDelete={vi.fn()} onOpenSettings={vi.fn()} onLeave={vi.fn()} />
         );
 
         expect(screen.getByRole('link', { name: /Q3 Roadmap/ })).toHaveAttribute(
@@ -71,6 +93,7 @@ describe('BoardCard', () => {
                 board={makeBoard({ members: [], _count: { columns: 1, members: 7 } })}
                 onDelete={vi.fn()}
                 onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
             />
         );
 
@@ -83,7 +106,7 @@ describe('BoardCard', () => {
         const board = makeBoard();
 
         render(
-            <BoardCard board={board} onDelete={vi.fn()} onOpenSettings={onOpenSettings} />
+            <BoardCard board={board} onDelete={vi.fn()} onOpenSettings={onOpenSettings} onLeave={vi.fn()} />
         );
         fireEvent.click(screen.getByLabelText('Board settings'));
 
@@ -95,7 +118,7 @@ describe('BoardCard', () => {
         const onDelete = vi.fn();
 
         render(
-            <BoardCard board={makeBoard()} onDelete={onDelete} onOpenSettings={vi.fn()} />
+            <BoardCard board={makeBoard()} onDelete={onDelete} onOpenSettings={vi.fn()} onLeave={vi.fn()} />
         );
         fireEvent.click(screen.getByLabelText('Delete board'));
 
@@ -110,6 +133,7 @@ describe('BoardCard', () => {
                 board={makeBoard({ currentUserRole: 'VIEWER' })}
                 onDelete={vi.fn()}
                 onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
             />
         );
 
@@ -125,6 +149,7 @@ describe('BoardCard', () => {
                 board={makeBoard({ color: null })}
                 onDelete={vi.fn()}
                 onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
             />
         );
 
@@ -140,6 +165,7 @@ describe('BoardCard', () => {
                 board={makeBoard({ color: 'amber' })}
                 onDelete={vi.fn()}
                 onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
             />
         );
 
@@ -160,11 +186,62 @@ describe('BoardCard', () => {
                 board={makeBoard({ color: 'url(evil)' })}
                 onDelete={vi.fn()}
                 onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
             />
         );
 
         const card = container.querySelector('a');
         expect(card?.style.background).toBe('');
+    });
+
+    it('offers to leave a board owned by someone else', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        render(
+            <BoardCard board={sharedBoard()} onDelete={vi.fn()} onOpenSettings={vi.fn()} onLeave={vi.fn()} />
+        );
+
+        expect(screen.getByLabelText('Leave board')).toBeInTheDocument();
+    });
+
+    it('does not offer to leave a board you own', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        render(
+            <BoardCard board={makeBoard()} onDelete={vi.fn()} onOpenSettings={vi.fn()} onLeave={vi.fn()} />
+        );
+
+        expect(screen.queryByLabelText('Leave board')).not.toBeInTheDocument();
+    });
+
+    it('calls onLeave with the board', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+        const onLeave = vi.fn();
+        const board = sharedBoard();
+
+        render(
+            <BoardCard board={board} onDelete={vi.fn()} onOpenSettings={vi.fn()} onLeave={onLeave} />
+        );
+        fireEvent.click(screen.getByLabelText('Leave board'));
+
+        expect(onLeave).toHaveBeenCalledWith(board);
+    });
+
+    it('hides leave when the membership row is missing', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        // Without a BoardMember row id there is nothing for the API to delete,
+        // so the button would be dead. Better absent than broken.
+        render(
+            <BoardCard
+                board={sharedBoard({ members: [] })}
+                onDelete={vi.fn()}
+                onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByLabelText('Leave board')).not.toBeInTheDocument();
     });
 
     it('omits the description paragraph when there is none', async () => {
@@ -175,6 +252,7 @@ describe('BoardCard', () => {
                 board={makeBoard({ description: null })}
                 onDelete={vi.fn()}
                 onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
             />
         );
 
