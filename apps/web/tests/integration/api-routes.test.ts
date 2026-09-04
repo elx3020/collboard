@@ -77,6 +77,19 @@ describe('GET /api/boards', () => {
     expect(body[0].title).toBe('My Board');
     expect(body[0].currentUserRole).toBe('OWNER');
   });
+
+  it('selects the membership row id so a member can leave the board', async () => {
+    mockPrisma.board.findMany.mockResolvedValue([]);
+
+    const { GET } = await import('@/app/api/boards/route');
+    await GET(new Request('http://localhost:3000/api/boards') as never);
+
+    // DELETE /members/[memberId] is keyed by the BoardMember row id. Without
+    // it in this select the dashboard has no way to name the row to remove,
+    // even though Board.members is typed as carrying one.
+    const args = mockPrisma.board.findMany.mock.calls[0]?.[0];
+    expect(args.include.members.select).toMatchObject({ id: true });
+  });
 });
 
 // ── POST /api/boards ───────────────────────────────────────────────────────────

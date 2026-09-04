@@ -4,18 +4,24 @@ import Link from 'next/link';
 import type React from 'react';
 import type { Board } from '@/lib/types';
 import { isBoardColor } from '@/lib/boards/board-colors';
-import { ColumnsIcon, MoreHorizontalIcon, TrashIcon, UsersIcon } from '@/components/icons';
+import { ColumnsIcon, LeaveIcon, MoreHorizontalIcon, TrashIcon, UsersIcon } from '@/components/icons';
 
 export function BoardCard({
     board,
     onDelete,
     onOpenSettings,
+    onLeave,
 }: {
     board: Board;
     onDelete: (boardId: string) => void;
     onOpenSettings: (board: Board) => void;
+    onLeave: (board: Board) => void;
 }) {
     const isOwner = board.currentUserRole === 'OWNER';
+    // GET /api/boards returns only the current user's own membership row, so
+    // this is the id the leave endpoint deletes. Absent for an owner, who has
+    // no BoardMember row at all.
+    const membershipId = board.members?.[0]?.id;
     // Guard again on render: the value reaches the DOM as a CSS variable name.
     const color = isBoardColor(board.color) ? board.color : null;
     // Overriding --muted-foreground on the card cascades to the description and
@@ -60,6 +66,23 @@ export function BoardCard({
                         aria-label="Delete board"
                     >
                         <TrashIcon />
+                    </button>
+                </div>
+            )}
+
+            {!isOwner && membershipId && (
+                <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onLeave(board);
+                        }}
+                        className="rounded-lg p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--destructive)]/15 hover:text-[var(--destructive)]"
+                        aria-label="Leave board"
+                    >
+                        <LeaveIcon />
                     </button>
                 </div>
             )}

@@ -2,7 +2,7 @@
 
 import { useState, lazy, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
-import { useBoards, useDeleteBoard } from '@/lib/hooks/use-queries';
+import { useBoards, useDeleteBoard, useLeaveBoard } from '@/lib/hooks/use-queries';
 import { Navbar } from '@/components/navbar';
 import { Spinner, EmptyState } from '@/components/ui-shared';
 import { BoardSection } from '@/components/dashboard/board-section';
@@ -20,6 +20,7 @@ export default function DashboardPage() {
     const { data: session } = useSession();
     const { data: boards, isLoading, error } = useBoards();
     const deleteBoard = useDeleteBoard();
+    const leaveBoard = useLeaveBoard();
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [settingsBoard, setSettingsBoard] = useState<Board | null>(null);
 
@@ -29,6 +30,21 @@ export default function DashboardPage() {
     const handleDelete = (boardId: string) => {
         if (confirm('Delete this board? This cannot be undone.')) {
             deleteBoard.mutate(boardId);
+        }
+    };
+
+    const handleLeave = (board: Board) => {
+        // The card only renders the leave button when this row exists, but the
+        // cache can be a step behind the render — so check again before firing.
+        const memberId = board.members?.[0]?.id;
+        if (!memberId) return;
+
+        if (
+            confirm(
+                `Leave "${board.title}"? You will lose access until someone invites you again.`
+            )
+        ) {
+            leaveBoard.mutate({ boardId: board.id, memberId });
         }
     };
 
@@ -91,6 +107,7 @@ export default function DashboardPage() {
                             emptyHint="Boards you create and keep to yourself will appear here."
                             onDelete={handleDelete}
                             onOpenSettings={setSettingsBoard}
+                            onLeave={handleLeave}
                         />
                         <BoardSection
                             id="sharedByMe"
@@ -99,6 +116,7 @@ export default function DashboardPage() {
                             emptyHint="Once you invite someone to a board you own, it will appear here."
                             onDelete={handleDelete}
                             onOpenSettings={setSettingsBoard}
+                            onLeave={handleLeave}
                         />
                         <BoardSection
                             id="sharedWithMe"
@@ -107,6 +125,7 @@ export default function DashboardPage() {
                             emptyHint="When someone invites you to their board, it will appear here."
                             onDelete={handleDelete}
                             onOpenSettings={setSettingsBoard}
+                            onLeave={handleLeave}
                         />
                     </>
                 )}

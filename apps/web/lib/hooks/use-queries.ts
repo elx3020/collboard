@@ -268,6 +268,29 @@ export function useInviteMember(boardId: string) {
   });
 }
 
+/**
+ * Leave a board someone else owns.
+ *
+ * Separate from `useRemoveMember`, which binds one boardId at hook-creation
+ * time — no good in a dashboard list where every card is a different board.
+ * The API's DELETE /members/[memberId] already allows self-removal without
+ * board:manage-members, so this needs no new endpoint.
+ */
+export function useLeaveBoard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ boardId, memberId }: { boardId: string; memberId: string }) =>
+      membersApi.remove(boardId, memberId),
+    onSuccess: () => {
+      // Drives the dashboard's owned / shared grouping — the board must drop
+      // out of "Shared with me" once you are no longer a member.
+      qc.invalidateQueries({ queryKey: queryKeys.boards });
+      toast.success('Left board');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
 export function useRemoveMember(boardId: string) {
   const qc = useQueryClient();
   return useMutation({
