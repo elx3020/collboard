@@ -27,7 +27,7 @@ import {
   useMoveTask,
 } from '@/lib/hooks/use-queries';
 import { useUIStore } from '@/lib/stores/ui-store';
-import { useBoardRealtime, ConnectionStatus } from '@/lib/hooks/use-board-realtime';
+import { useBoardRealtime } from '@/lib/hooks/use-board-realtime';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/hooks/use-queries';
 import type { Task, Column } from '@/lib/types';
@@ -251,7 +251,7 @@ export default function BoardPage() {
 
           {/* Search + Filter + Status */}
           <div className="flex items-center gap-2">
-            <ConnectionStatus />
+            {/* <ConnectionStatus /> */}
             <div className="relative">
               <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
               <input

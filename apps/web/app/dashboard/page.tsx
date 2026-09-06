@@ -9,7 +9,9 @@ import { BoardSection } from '@/components/dashboard/board-section';
 import { groupBoards } from '@/lib/boards/group-boards';
 import { BoardSettingsModal } from '@/components/dashboard/board-settings-modal';
 import type { Board } from '@/lib/types';
-import { GridIcon, PlusIcon } from '@/components/icons';
+import { PlusIcon } from '@/components/icons';
+import Image from 'next/image';
+
 
 // Lazy load the modal — only downloaded when user clicks "New Board"
 const CreateBoardModal = lazy(() =>
@@ -84,7 +86,14 @@ export default function DashboardPage() {
 
                 {boards && boards.length === 0 && (
                     <EmptyState
-                        icon={<GridIcon className="h-12 w-12" strokeWidth={1.5} />}
+                        icon={<Image
+                            alt="Collboard logo"
+                            src="/collboard-icon.svg"
+                            width={32}
+                            height={32}
+                            className="h-8 w-auto"
+                            priority={false}
+                        />}
                         title="No boards yet"
                         description="Create your first Kanban board to get started."
                         action={

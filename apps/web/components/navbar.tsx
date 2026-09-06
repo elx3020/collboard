@@ -4,8 +4,6 @@ import { signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { ConnectionStatus } from '@/lib/hooks/use-board-realtime';
-import { GridIcon } from '@/components/icons';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 
 export function Navbar() {
@@ -19,13 +17,19 @@ export function Navbar() {
                     href="/dashboard"
                     className="flex items-center gap-2 font-bold text-lg text-[var(--foreground)]"
                 >
-                    <GridIcon className="h-6 w-6 text-[var(--accent)]" />
+                    <Image
+                        alt="Collboard logo"
+                        src="/collboard-icon.svg"
+                        width={32}
+                        height={32}
+                        className="h-8 w-auto"
+                        priority={false}
+                    />
                     Collboard
                 </Link>
 
                 {/* Right side */}
                 <div className="flex items-center gap-3">
-                    <ConnectionStatus />
                     <NotificationBell />
                     <ThemeToggle />
 
