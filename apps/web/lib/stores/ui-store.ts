@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Task } from '@/lib/types';
+import type { Task, BoardStatusFilter } from '@/lib/types';
 
 // ─── UI State Store ────────────────────────────────────────────────────────────
 
@@ -32,6 +32,8 @@ interface UIState {
   setSearchQuery: (query: string) => void;
   priorityFilter: string | null;
   setPriorityFilter: (priority: string | null) => void;
+  statusFilter: BoardStatusFilter;
+  setStatusFilter: (status: BoardStatusFilter) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -63,4 +65,6 @@ export const useUIStore = create<UIState>((set) => ({
   setSearchQuery: (query) => set({ searchQuery: query }),
   priorityFilter: null,
   setPriorityFilter: (priority) => set({ priorityFilter: priority }),
+  statusFilter: 'ACTIVE',
+  setStatusFilter: (status) => set({ statusFilter: status }),
 }));

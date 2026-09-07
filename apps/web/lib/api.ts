@@ -21,6 +21,7 @@ import type {
   UpdateAccountRequest,
   UpdateNotificationPreferencesRequest,
   DeleteAccountRequest,
+  TaskStatus,
 } from '@/lib/types';
 
 // ─── Generic Fetch Wrapper ─────────────────────────────────────────────────────
@@ -44,7 +45,10 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 export const boardsApi = {
   list: () => apiFetch<Board[]>('/api/boards'),
 
-  get: (boardId: string) => apiFetch<Board>(`/api/boards/${boardId}`),
+  get: (boardId: string, status?: TaskStatus) =>
+    apiFetch<Board>(
+      status ? `/api/boards/${boardId}?status=${status}` : `/api/boards/${boardId}`
+    ),
 
   create: (data: CreateBoardRequest) =>
     apiFetch<Board>('/api/boards', {

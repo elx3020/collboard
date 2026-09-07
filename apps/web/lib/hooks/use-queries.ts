@@ -23,6 +23,7 @@ import type {
   AccountProfile,
   DeleteAccountRequest,
   NotificationType,
+  BoardStatusFilter,
 } from '@/lib/types';
 import { toast } from 'sonner';
 import { signOut, useSession } from 'next-auth/react';
@@ -32,6 +33,14 @@ import { signOut, useSession } from 'next-auth/react';
 export const queryKeys = {
   boards: ['boards'] as const,
   board: (id: string) => ['boards', id] as const,
+  /**
+   * The board under a task-status filter. Deliberately an extension of
+   * `board(id)`: React Query invalidates by key prefix, so every existing
+   * `invalidateQueries({ queryKey: queryKeys.board(id) })` still reaches each
+   * filtered variant without being touched.
+   */
+  boardFiltered: (id: string, status: BoardStatusFilter) =>
+    ['boards', id, { status }] as const,
   columns: (boardId: string) => ['boards', boardId, 'columns'] as const,
   tasks: (boardId: string) => ['boards', boardId, 'tasks'] as const,
   task: (boardId: string, taskId: string) =>
@@ -53,10 +62,11 @@ export function useBoards(options?: Partial<UseQueryOptions<Board[]>>) {
   });
 }
 
-export function useBoard(boardId: string) {
+export function useBoard(boardId: string, status: BoardStatusFilter = 'ACTIVE') {
   return useQuery({
-    queryKey: queryKeys.board(boardId),
-    queryFn: () => boardsApi.get(boardId),
+    queryKey: queryKeys.boardFiltered(boardId, status),
+    // ACTIVE is the server's default, so it travels as an absent param.
+    queryFn: () => boardsApi.get(boardId, status === 'ACTIVE' ? undefined : status),
     enabled: !!boardId,
   });
 }
