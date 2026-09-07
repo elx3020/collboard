@@ -21,6 +21,12 @@ vi.mock('next-auth/next', () => ({
 
 vi.mock('@/lib/auth/auth-options', () => ({ authOptions: {} }));
 
+vi.mock('@/lib/auth/password', () => ({
+  verifyPassword: vi.fn((plain: string, hash: string) =>
+    Promise.resolve(hash === `hashed:${plain}`),
+  ),
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
   session.user.id = 'user-1';
@@ -203,5 +209,104 @@ describe('PUT /api/user/notification-preferences', () => {
 
     expect(res.status).toBe(400);
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('DELETE /api/user', () => {
+  function request(body: unknown) {
+    return new Request('http://localhost/api/user', {
+      method: 'DELETE',
+      body: JSON.stringify(body),
+    }) as never;
+  }
+
+  it('deletes the account when the password is correct', async () => {
+    session.user.id = 'delete-ok';
+    mockPrisma.user.findUnique.mockResolvedValue({
+      email: 'ada@example.com',
+      password: 'hashed:CorrectHorse1!',
+    });
+    mockPrisma.user.delete.mockResolvedValue({});
+
+    const { DELETE } = await import('@/app/api/user/route');
+    const res = await DELETE(request({ password: 'CorrectHorse1!' }), ctx);
+
+    expect(res.status).toBe(200);
+    expect(mockPrisma.user.delete).toHaveBeenCalledWith({ where: { id: 'delete-ok' } });
+  });
+
+  it('refuses a wrong password and deletes nothing', async () => {
+    session.user.id = 'delete-wrong-password';
+    mockPrisma.user.findUnique.mockResolvedValue({
+      email: 'ada@example.com',
+      password: 'hashed:CorrectHorse1!',
+    });
+
+    const { DELETE } = await import('@/app/api/user/route');
+    const res = await DELETE(request({ password: 'WrongPassword1!' }), ctx);
+
+    expect(res.status).toBe(401);
+    expect(mockPrisma.user.delete).not.toHaveBeenCalled();
+  });
+
+  it('accepts a matching email for an account with no password', async () => {
+    session.user.id = 'delete-oauth';
+    mockPrisma.user.findUnique.mockResolvedValue({
+      email: 'ada@example.com',
+      password: null,
+    });
+    mockPrisma.user.delete.mockResolvedValue({});
+
+    const { DELETE } = await import('@/app/api/user/route');
+    const res = await DELETE(request({ confirmEmail: '  ADA@example.com ' }), ctx);
+
+    expect(res.status).toBe(200);
+    expect(mockPrisma.user.delete).toHaveBeenCalledWith({ where: { id: 'delete-oauth' } });
+  });
+
+  it('refuses a mismatched email and deletes nothing', async () => {
+    session.user.id = 'delete-wrong-email';
+    mockPrisma.user.findUnique.mockResolvedValue({
+      email: 'ada@example.com',
+      password: null,
+    });
+
+    const { DELETE } = await import('@/app/api/user/route');
+    const res = await DELETE(request({ confirmEmail: 'someone@else.com' }), ctx);
+
+    expect(res.status).toBe(401);
+    expect(mockPrisma.user.delete).not.toHaveBeenCalled();
+  });
+
+  it('refuses an email confirmation when the account has a password', async () => {
+    session.user.id = 'delete-wrong-proof';
+    mockPrisma.user.findUnique.mockResolvedValue({
+      email: 'ada@example.com',
+      password: 'hashed:CorrectHorse1!',
+    });
+
+    const { DELETE } = await import('@/app/api/user/route');
+    const res = await DELETE(request({ confirmEmail: 'ada@example.com' }), ctx);
+
+    expect(res.status).toBe(401);
+    expect(mockPrisma.user.delete).not.toHaveBeenCalled();
+  });
+
+  it('rate limits repeated failed attempts by the same user', async () => {
+    session.user.id = 'delete-brute-force';
+    mockPrisma.user.findUnique.mockResolvedValue({
+      email: 'ada@example.com',
+      password: 'hashed:CorrectHorse1!',
+    });
+
+    const { DELETE } = await import('@/app/api/user/route');
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const res = await DELETE(request({ password: 'WrongPassword1!' }), ctx);
+      statuses.push(res.status);
+    }
+
+    expect(statuses.slice(0, 5)).toEqual([401, 401, 401, 401, 401]);
+    expect(statuses[5]).toBe(429);
   });
 });
