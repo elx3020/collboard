@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
+import { assertAssignable } from '@/lib/boards/assignable';
 import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
 import { logger } from '@/lib/logger';
 import { notify } from '@/lib/notifications/notify';
@@ -76,6 +77,15 @@ export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, {
 
   const body = await req.json();
   const { title, description, priority, assigneeId } = body;
+
+  // Only when assignment is actually part of this edit: a title-only PATCH
+  // must not demand task:assign.
+  if (assigneeId !== undefined) {
+    if (assigneeId) {
+      await requireBoardPermission(userId, boardId, 'task:assign');
+    }
+    await assertAssignable(boardId, assigneeId);
+  }
 
   const data: Record<string, unknown> = {};
 

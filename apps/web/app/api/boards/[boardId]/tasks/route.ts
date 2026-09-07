@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { requireBoardPermission } from '@/lib/auth/rbac';
+import { assertAssignable } from '@/lib/boards/assignable';
 import { publishEvent, CHANNELS, EventType } from '@/lib/redis';
 import { logger } from '@/lib/logger';
 import { notify } from '@/lib/notifications/notify';
@@ -76,6 +77,14 @@ export const POST = withAuth<{ boardId: string }>(async (req, { params, userId }
       { status: 400 }
     );
   }
+
+  // Naming someone else is a distinct act from creating a task, and the id
+  // arrives from the request body — so it needs both its own permission and a
+  // check that the person is actually on this board.
+  if (assigneeId) {
+    await requireBoardPermission(userId, boardId, 'task:assign');
+  }
+  await assertAssignable(boardId, assigneeId);
 
   // Verify column belongs to this board
   const column = await prisma.column.findFirst({
