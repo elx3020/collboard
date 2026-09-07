@@ -255,6 +255,34 @@ export interface NotificationCreatedPayload {
   notification: AppNotification;
 }
 
+// ─── Account ───────────────────────────────────────────────────────────────────
+
+/** The signed-in user's own account, as returned by GET /api/user. */
+export interface AccountProfile {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+  /** False for OAuth-only accounts, which confirm deletion by email instead. */
+  hasPassword: boolean;
+  mutedNotificationTypes: NotificationType[];
+  /** Boards this user owns that other people would lose on deletion. */
+  ownedBoardsWithMembers: number;
+}
+
+export interface UpdateAccountRequest {
+  name: string;
+}
+
+export interface UpdateNotificationPreferencesRequest {
+  mutedTypes: NotificationType[];
+}
+
+/** Whichever proof the account supports — see AccountProfile.hasPassword. */
+export type DeleteAccountRequest =
+  | { password: string }
+  | { confirmEmail: string };
+
 // ─── API Request Types ─────────────────────────────────────────────────────────
 
 export interface CreateBoardRequest {

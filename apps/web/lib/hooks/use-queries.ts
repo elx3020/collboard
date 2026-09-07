@@ -7,7 +7,7 @@ import {
   useQueryClient,
   type UseQueryOptions,
 } from '@tanstack/react-query';
-import { boardsApi, columnsApi, tasksApi, commentsApi, membersApi, notificationsApi } from '@/lib/api';
+import { boardsApi, columnsApi, tasksApi, commentsApi, membersApi, notificationsApi, accountApi } from '@/lib/api';
 import type {
   Board,
   CreateBoardRequest,
@@ -20,8 +20,12 @@ import type {
   CreateCommentRequest,
   InviteMemberRequest,
   NotificationPage,
+  AccountProfile,
+  DeleteAccountRequest,
+  NotificationType,
 } from '@/lib/types';
 import { toast } from 'sonner';
+import { signOut, useSession } from 'next-auth/react';
 
 // ─── Query Keys ────────────────────────────────────────────────────────────────
 
@@ -36,6 +40,7 @@ export const queryKeys = {
     ['boards', boardId, 'tasks', taskId, 'comments'] as const,
   members: (boardId: string) => ['boards', boardId, 'members'] as const,
   notifications: ['notifications'] as const,
+  account: ['account'] as const,
 };
 
 // ─── Boards ────────────────────────────────────────────────────────────────────
@@ -333,5 +338,71 @@ export function useMarkAllNotificationsRead() {
     mutationFn: () => notificationsApi.markAllRead(),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.notifications }),
     onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+// ─── Account ───────────────────────────────────────────────────────────────────
+
+export function useAccount() {
+  return useQuery({
+    queryKey: queryKeys.account,
+    queryFn: accountApi.get,
+  });
+}
+
+export function useUpdateAccountName() {
+  const qc = useQueryClient();
+  const { update } = useSession();
+
+  return useMutation({
+    mutationFn: (name: string) => accountApi.updateName({ name }),
+    onSuccess: async () => {
+      qc.invalidateQueries({ queryKey: queryKeys.account });
+      // Refresh the JWT so the navbar shows the new name without a reload.
+      // The name itself is re-read server-side; this only triggers that.
+      await update();
+      toast.success('Name updated');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function useUpdateNotificationPreferences() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (mutedTypes: NotificationType[]) =>
+      accountApi.updateNotificationPreferences({ mutedTypes }),
+    // Optimistic because a switch that visibly lags a round trip reads as
+    // broken. The whole array is replaced, so a rollback is a straight restore.
+    onMutate: async (mutedTypes) => {
+      await qc.cancelQueries({ queryKey: queryKeys.account });
+      const previous = qc.getQueryData<AccountProfile>(queryKeys.account);
+
+      if (previous) {
+        qc.setQueryData<AccountProfile>(queryKeys.account, {
+          ...previous,
+          mutedNotificationTypes: mutedTypes,
+        });
+      }
+
+      return { previous };
+    },
+    onError: (err: Error, _mutedTypes, context) => {
+      if (context?.previous) {
+        qc.setQueryData(queryKeys.account, context.previous);
+      }
+      toast.error(err.message);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.account }),
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: (confirmation: DeleteAccountRequest) => accountApi.remove(confirmation),
+    onSuccess: () => signOut({ callbackUrl: '/' }),
+    // Deliberately no onError toast: the delete modal renders the failure
+    // inline, next to the field that caused it.
   });
 }

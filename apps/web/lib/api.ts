@@ -15,6 +15,12 @@ import type {
   CreateCommentRequest,
   InviteMemberRequest,
   NotificationPage,
+  NotificationType,
+  UserSummary,
+  AccountProfile,
+  UpdateAccountRequest,
+  UpdateNotificationPreferencesRequest,
+  DeleteAccountRequest,
 } from '@/lib/types';
 
 // ─── Generic Fetch Wrapper ─────────────────────────────────────────────────────
@@ -175,4 +181,28 @@ export const notificationsApi = {
 
   markAllRead: () =>
     apiFetch<{ count: number }>('/api/notifications/read-all', { method: 'PATCH' }),
+};
+
+// ─── Account ───────────────────────────────────────────────────────────────────
+
+export const accountApi = {
+  get: () => apiFetch<AccountProfile>('/api/user'),
+
+  updateName: (data: UpdateAccountRequest) =>
+    apiFetch<UserSummary>('/api/user', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  updateNotificationPreferences: (data: UpdateNotificationPreferencesRequest) =>
+    apiFetch<{ mutedNotificationTypes: NotificationType[] }>(
+      '/api/user/notification-preferences',
+      { method: 'PUT', body: JSON.stringify(data) }
+    ),
+
+  remove: (data: DeleteAccountRequest) =>
+    apiFetch<{ message: string }>('/api/user', {
+      method: 'DELETE',
+      body: JSON.stringify(data),
+    }),
 };
