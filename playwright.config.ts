@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config } from 'dotenv';
+
+// Next loads apps/web/.env itself, but the test runner does not. Specs that
+// seed fixtures straight into Postgres need DATABASE_URL in their own process.
+config({ path: './apps/web/.env' });
 
 export default defineConfig({
   testDir: './apps/web/tests/e2e',
