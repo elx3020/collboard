@@ -22,7 +22,7 @@ model User {
 
   // Notification types this user has switched off. Empty means "everything on",
   // so a new NotificationType is on by default with no backfill.
-  mutedNotificationTypes NotificationType[]
+  mutedNotificationTypes NotificationType[] @default([])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
