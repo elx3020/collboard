@@ -122,7 +122,7 @@ export const authOptions: NextAuthOptions = {
      * JWT callback — called whenever a JWT is created or updated.
      * Handles refresh token creation and rotation.
      */
-    async jwt({ token, user, account }): Promise<JWT> {
+    async jwt({ token, user, account, trigger }): Promise<JWT> {
       // Initial sign-in: create a refresh token
       if (user && account) {
         const refreshTokenData = await createRefreshToken(user.id);
@@ -137,6 +137,22 @@ export const authOptions: NextAuthOptions = {
           refreshTokenFamily: refreshTokenData.family,
           accessTokenExpires: Date.now() + ACCESS_TOKEN_MAX_AGE * 1000,
         };
+      }
+
+      // A client-triggered update — the settings page renaming the account —
+      // must be honoured even while the access token is still fresh, so this
+      // runs before the early return below.
+      //
+      // The name is re-read from the database rather than taken from the
+      // `session` argument, which is supplied by the client: trusting it would
+      // let a user write an arbitrary display name into their own JWT without
+      // it ever existing in the database.
+      if (trigger === 'update' && token.id) {
+        const fresh = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: { name: true },
+        });
+        token.name = fresh?.name ?? token.name;
       }
 
       // Return token if access token hasn't expired
