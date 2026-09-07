@@ -1,14 +1,12 @@
 'use client';
 
-import { signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { UserMenu } from '@/components/user-menu';
 
 export function Navbar() {
-    const { data: session } = useSession();
-
     return (
         <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--card)]">
             <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-6">
@@ -32,33 +30,7 @@ export function Navbar() {
                 <div className="flex items-center gap-3">
                     <NotificationBell />
                     <ThemeToggle />
-
-                    {session?.user && (
-                        <div className="flex items-center gap-3">
-                            <span className="hidden text-sm text-[var(--muted-foreground)] sm:inline">
-                                {session.user.name || session.user.email}
-                            </span>
-                            {session.user.image ? (
-                                <Image
-                                    src={session.user.image}
-                                    alt=""
-                                    width={32}
-                                    height={32}
-                                    className="h-8 w-8 rounded-full ring-2 ring-[var(--border)]"
-                                />
-                            ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-medium text-[var(--accent-foreground)]">
-                                    {(session.user.name || session.user.email || '?')[0]?.toUpperCase()}
-                                </div>
-                            )}
-                            <button
-                                onClick={() => signOut({ callbackUrl: '/' })}
-                                className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors"
-                            >
-                                Sign out
-                            </button>
-                        </div>
-                    )}
+                    <UserMenu />
                 </div>
             </div>
         </header>

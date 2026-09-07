@@ -56,22 +56,23 @@ vi.mock('next-themes', () => ({
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe('Navbar', () => {
-    it('renders the logo and user info', async () => {
+    it('renders the logo and the account menu', async () => {
         const { Navbar } = await import('@/components/navbar');
 
         render(<Navbar />);
 
         expect(screen.getByText('Collboard')).toBeInTheDocument();
         expect(screen.getByText('Test User')).toBeInTheDocument();
-        expect(screen.getByText('Sign out')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /account menu/i })).toBeInTheDocument();
     });
 
-    it('calls signOut on click', async () => {
+    it('calls signOut from the account menu', async () => {
         const { signOut } = await import('next-auth/react');
         const { Navbar } = await import('@/components/navbar');
 
         render(<Navbar />);
-        fireEvent.click(screen.getByText('Sign out'));
+        fireEvent.click(screen.getByRole('button', { name: /account menu/i }));
+        fireEvent.click(screen.getByRole('menuitem', { name: /log out/i }));
 
         expect(signOut).toHaveBeenCalledWith({ callbackUrl: '/' });
     });
