@@ -66,6 +66,61 @@ test.describe('Account settings', () => {
     });
   });
 
+  test('the toggle knob stays inside its track in both states', async ({ page }) => {
+    const knobEmail = `knob-${Date.now()}@example.com`;
+
+    await page.goto('/auth/signup');
+    await page.getByLabel(/name/i).fill('Knob');
+    await page.getByLabel(/email/i).fill(knobEmail);
+    await page.getByLabel('Password', { exact: true }).fill(password);
+    await page.getByLabel(/confirm password/i).fill(password);
+    await page.getByRole('button', { name: /create account/i }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+
+    await page.goto('/settings/notifications');
+    const toggle = page.getByRole('switch', { name: /tasks assigned to you/i });
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+
+    // Geometry, not classes: the knob is absolutely positioned, and without a
+    // horizontal anchor it lands on its static position — the centre of the
+    // track, because buttons are text-align:center — and then translates clean
+    // off the end. Only a layout assertion catches that.
+    const contained = async () =>
+      toggle.evaluate((btn) => {
+        const knob = btn.querySelector('span') as HTMLElement;
+        const t = btn.getBoundingClientRect();
+        const k = knob.getBoundingClientRect();
+        return {
+          leftInset: Math.round(k.left - t.left),
+          rightInset: Math.round(t.right - k.right),
+          topInset: Math.round(k.top - t.top),
+        };
+      });
+
+    const on = await contained();
+    expect(on.leftInset).toBeGreaterThanOrEqual(0);
+    expect(on.rightInset).toBeGreaterThanOrEqual(0);
+    expect(on.topInset).toBeGreaterThanOrEqual(0);
+
+    const saved = page.waitForResponse(
+      (res) =>
+        res.url().includes('/api/user/notification-preferences') &&
+        res.request().method() === 'PUT' &&
+        res.ok(),
+    );
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await saved;
+
+    const off = await contained();
+    expect(off.leftInset).toBeGreaterThanOrEqual(0);
+    expect(off.rightInset).toBeGreaterThanOrEqual(0);
+    expect(off.topInset).toBeGreaterThanOrEqual(0);
+
+    // The knob must actually move between states, or the switch reads as dead.
+    expect(on.leftInset).not.toBe(off.leftInset);
+  });
+
   test('the notification toggles persist across a reload', async ({ page }) => {
     const toggleEmail = `toggles-${Date.now()}@example.com`;
 

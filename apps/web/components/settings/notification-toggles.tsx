@@ -81,13 +81,21 @@ export function NotificationToggles() {
                             onClick={() => toggle(type)}
                             className={clsx(
                                 'relative h-6 w-11 shrink-0 rounded-full transition-colors',
-                                enabled ? 'bg-[var(--accent)]' : 'bg-[var(--muted)]'
+                                'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]',
+                                // The off track is --border, not --muted: --muted (#f3f4f6) sits
+                                // between the page (#f9fafb) and a white knob, leaving three
+                                // near-white surfaces and no visible control.
+                                enabled ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
                             )}
                         >
                             <span
                                 className={clsx(
-                                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
-                                    enabled ? 'translate-x-5' : 'translate-x-0.5'
+                                    // left-0.5 is load-bearing: without a horizontal anchor the
+                                    // knob falls back to its static position, which a button's
+                                    // default text-align:center puts mid-track — and the
+                                    // translate then carries it off the end.
+                                    'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                                    enabled ? 'translate-x-5' : 'translate-x-0'
                                 )}
                             />
                         </button>
