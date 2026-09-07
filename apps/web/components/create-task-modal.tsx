@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { Modal } from '@/components/modal';
 import { useCreateTask } from '@/lib/hooks/use-queries';
+import { AssigneePicker } from '@/components/board/assignee-picker';
 import type { Priority } from '@/lib/types';
 
 interface CreateTaskModalProps {
@@ -16,6 +17,8 @@ export function CreateTaskModal({ open, onClose, boardId, columnId }: CreateTask
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<Priority>('MEDIUM');
+    // Empty by default — a new task is unassigned unless someone is chosen.
+    const [assigneeId, setAssigneeId] = useState<string | null>(null);
     const createTask = useCreateTask(boardId);
 
     const handleSubmit = async (e: FormEvent) => {
@@ -27,11 +30,13 @@ export function CreateTaskModal({ open, onClose, boardId, columnId }: CreateTask
             description: description.trim() || undefined,
             columnId,
             priority,
+            assigneeId: assigneeId ?? undefined,
         });
 
         setTitle('');
         setDescription('');
         setPriority('MEDIUM');
+        setAssigneeId(null);
         onClose();
     };
 
@@ -82,6 +87,18 @@ export function CreateTaskModal({ open, onClose, boardId, columnId }: CreateTask
                         <option value="HIGH">High</option>
                         <option value="URGENT">Urgent</option>
                     </select>
+                </div>
+
+                <div>
+                    <label htmlFor="task-assignee" className="block text-sm font-medium text-[var(--foreground)]">
+                        Assignee
+                    </label>
+                    <AssigneePicker
+                        boardId={boardId}
+                        value={assigneeId}
+                        onChange={setAssigneeId}
+                        className="mt-1 block w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                    />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">

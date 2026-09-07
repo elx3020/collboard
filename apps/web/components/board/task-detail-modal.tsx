@@ -10,6 +10,7 @@ import {
     useUpdateTask,
     useDeleteTask,
 } from '@/lib/hooks/use-queries';
+import { AssigneePicker } from '@/components/board/assignee-picker';
 import type { Task, Priority, UpdateTaskRequest } from '@/lib/types';
 
 interface TaskDetailModalProps {
@@ -23,6 +24,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
     const [editTitle, setEditTitle] = useState(task.title);
     const [editDescription, setEditDescription] = useState(task.description || '');
     const [editPriority, setEditPriority] = useState<Priority>(task.priority);
+    const [editAssigneeId, setEditAssigneeId] = useState<string | null>(task.assigneeId);
     const [commentText, setCommentText] = useState('');
     const deletedRef = useRef(false);
 
@@ -41,6 +43,9 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
         if (title && title !== task.title) changes.title = title;
         if (description !== (task.description || '').trim()) changes.description = description;
         if (editPriority !== task.priority) changes.priority = editPriority;
+        // null is a meaningful value here — it unassigns — so this compares
+        // against the task's own null rather than testing for truthiness.
+        if (editAssigneeId !== task.assigneeId) changes.assigneeId = editAssigneeId;
 
         return changes;
     };
@@ -101,14 +106,11 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                             <option value="URGENT">Urgent</option>
                         </select>
 
-                        {task.assignee && (
-                            <div className="flex items-center gap-1.5">
-                                <Avatar src={task.assignee.image} name={task.assignee.name} size="sm" />
-                                <span className="text-sm text-[var(--muted-foreground)]">
-                                    {task.assignee.name || task.assignee.email}
-                                </span>
-                            </div>
-                        )}
+                        <AssigneePicker
+                            boardId={boardId}
+                            value={editAssigneeId}
+                            onChange={setEditAssigneeId}
+                        />
 
                         <button
                             onClick={handleDelete}
