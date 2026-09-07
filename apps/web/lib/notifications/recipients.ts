@@ -49,6 +49,7 @@ async function taskAudience(taskId: string): Promise<string[]> {
  *
  * The actor is always excluded and the result is deduplicated, so a person is
  * never told about their own action and never gets the same event twice.
+ * Recipients who have muted the event's type are removed last.
  */
 export async function resolveRecipients(
   event: NotifyEvent,
@@ -73,5 +74,22 @@ export async function resolveRecipients(
       break;
   }
 
-  return [...new Set(candidates)].filter((id) => id !== actorId);
+  const recipients = [...new Set(candidates)].filter((id) => id !== actorId);
+  if (recipients.length === 0) return [];
+
+  // Preferences are applied here rather than at read time so a muted
+  // notification is never written at all — which keeps unread counts correct
+  // without teaching every count query about preferences.
+  const allowed = await prisma.user.findMany({
+    where: {
+      id: { in: recipients },
+      NOT: { mutedNotificationTypes: { has: event.type } },
+    },
+    select: { id: true },
+  });
+
+  // Filter the candidate list rather than mapping the rows: the database does
+  // not promise an order, and callers rely on recipient order being stable.
+  const allowedIds = new Set(allowed.map((u) => u.id));
+  return recipients.filter((id) => allowedIds.has(id));
 }
