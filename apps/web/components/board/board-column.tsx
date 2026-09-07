@@ -18,6 +18,7 @@ interface BoardColumnProps {
     tasks: Task[];
     onAddTask: (columnId: string) => void;
     onTaskClick: (task: Task) => void;
+    onToggleStatus?: (task: Task) => void;
     onDeleteColumn?: (columnId: string) => void;
     onRenameColumn?: (columnId: string, title: string) => void;
 }
@@ -27,6 +28,7 @@ export function BoardColumn({
     tasks,
     onAddTask,
     onTaskClick,
+    onToggleStatus,
     onDeleteColumn,
     onRenameColumn,
 }: BoardColumnProps) {
@@ -149,6 +151,7 @@ export function BoardColumn({
                             key={task.id}
                             task={task}
                             onClick={() => onTaskClick(task)}
+                            onToggleStatus={onToggleStatus}
                         />
                     ))}
                 </SortableContext>

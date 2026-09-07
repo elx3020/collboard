@@ -4,16 +4,17 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { clsx } from 'clsx';
 import { PriorityBadge, Avatar } from '@/components/ui-shared';
-import { CommentIcon } from '@/components/icons';
+import { CommentIcon, CircleIcon, CheckCircleIcon, ArchiveIcon } from '@/components/icons';
 import type { Task } from '@/lib/types';
 
 interface TaskCardProps {
     task: Task;
     onClick: () => void;
+    onToggleStatus?: (task: Task) => void;
     isDragOverlay?: boolean;
 }
 
-export function TaskCard({ task, onClick, isDragOverlay }: TaskCardProps) {
+export function TaskCard({ task, onClick, onToggleStatus, isDragOverlay }: TaskCardProps) {
     const {
         attributes,
         listeners,
@@ -39,6 +40,7 @@ export function TaskCard({ task, onClick, isDragOverlay }: TaskCardProps) {
             {...listeners}
             className={clsx(
                 'group cursor-grab rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm transition-all hover:shadow-md hover:border-[var(--accent)]',
+                task.status !== 'INCOMPLETED' && 'opacity-60',
                 isDragging && 'opacity-40',
                 isDragOverlay && 'drag-overlay cursor-grabbing'
             )}
@@ -53,19 +55,61 @@ export function TaskCard({ task, onClick, isDragOverlay }: TaskCardProps) {
             tabIndex={0}
             aria-label={`Task: ${task.title}. Priority: ${task.priority}`}
         >
-            {/* Priority + comment count */}
+            {/* Priority + comment count + status */}
             <div className="mb-2 flex items-center justify-between">
                 <PriorityBadge priority={task.priority} />
-                {task._count?.comments ? (
-                    <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
-                        <CommentIcon className="h-3.5 w-3.5" />
-                        {task._count.comments}
-                    </span>
-                ) : null}
+                <div className="flex items-center gap-2">
+                    {task._count?.comments ? (
+                        <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
+                            <CommentIcon className="h-3.5 w-3.5" />
+                            {task._count.comments}
+                        </span>
+                    ) : null}
+
+                    {task.status === 'ARCHIVED' ? (
+                        // Archiving is a modal-only action, so on the card the glyph
+                        // is an indicator rather than a control.
+                        <ArchiveIcon
+                            className="h-4 w-4 text-[var(--muted-foreground)]"
+                            aria-hidden={undefined}
+                            aria-label="Archived"
+                            role="img"
+                        />
+                    ) : (
+                        <button
+                            type="button"
+                            aria-label={
+                                task.status === 'COMPLETED'
+                                    ? 'Mark as incompleted'
+                                    : 'Mark as completed'
+                            }
+                            aria-pressed={task.status === 'COMPLETED'}
+                            // The card itself opens the modal and carries the drag
+                            // listeners, so this control has to claim both gestures.
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleStatus?.(task);
+                            }}
+                            className="rounded text-[var(--muted-foreground)] transition-colors hover:text-[var(--accent)]"
+                        >
+                            {task.status === 'COMPLETED' ? (
+                                <CheckCircleIcon className="h-4 w-4 text-[var(--accent)]" />
+                            ) : (
+                                <CircleIcon className="h-4 w-4" />
+                            )}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Title */}
-            <h4 className="text-sm font-medium text-[var(--foreground)] line-clamp-2">
+            <h4
+                className={clsx(
+                    'text-sm font-medium text-[var(--foreground)] line-clamp-2',
+                    task.status === 'COMPLETED' && 'line-through'
+                )}
+            >
                 {task.title}
             </h4>
 
