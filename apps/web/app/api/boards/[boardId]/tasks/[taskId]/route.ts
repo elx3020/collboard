@@ -61,9 +61,25 @@ export const GET = withAuth<{ boardId: string; taskId: string }>(async (_req, { 
   return NextResponse.json(task);
 });
 
+const VALID_STATUSES = ['INCOMPLETED', 'COMPLETED', 'ARCHIVED'];
+
+/**
+ * The actor's name and the board's title, snapshotted onto a notification so it
+ * still reads correctly after either is renamed or deleted. Fetched once per
+ * request: a single PATCH can raise two notifications.
+ */
+async function notificationContext(userId: string, boardId: string) {
+  const [actor, boardRow] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
+  ]);
+
+  return { actorName: actor?.name ?? null, boardTitle: boardRow?.title ?? null };
+}
+
 /**
  * PATCH /api/boards/[boardId]/tasks/[taskId]
- * Update task fields (title, description, priority, assigneeId).
+ * Update task fields (title, description, priority, assigneeId, status).
  */
 export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, { params, userId }) => {
   const { boardId, taskId } = params;
@@ -76,7 +92,7 @@ export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, {
   }
 
   const body = await req.json();
-  const { title, description, priority, assigneeId } = body;
+  const { title, description, priority, assigneeId, status } = body;
 
   // Only when assignment is actually part of this edit: a title-only PATCH
   // must not demand task:assign.
@@ -114,6 +130,16 @@ export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, {
     data.priority = priority.toUpperCase();
   }
 
+  if (status !== undefined) {
+    if (typeof status !== 'string' || !VALID_STATUSES.includes(status.toUpperCase())) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` },
+        { status: 400 }
+      );
+    }
+    data.status = status.toUpperCase();
+  }
+
   if (assigneeId !== undefined) {
     data.assigneeId = assigneeId || null;
   }
@@ -147,23 +173,36 @@ export const PATCH = withAuth<{ boardId: string; taskId: string }>(async (req, {
     logger.error({ err: error }, 'Failed to publish task updated event');
   }
 
-  // Only a change of assignee is worth a notification: title and priority edits
-  // are not, and re-saving the same assignee must not re-notify.
-  if (assigneeId !== undefined && task.assigneeId && task.assigneeId !== existing.assigneeId) {
-    const [actor, boardRow] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
-      prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
-    ]);
+  // Only a real change is worth a notification: title and priority edits are
+  // not, and re-saving the same value must not re-notify.
+  const newAssigneeId =
+    assigneeId !== undefined && task.assigneeId && task.assigneeId !== existing.assigneeId
+      ? task.assigneeId
+      : null;
+  const newStatus =
+    status !== undefined && task.status !== existing.status ? task.status : null;
 
-    await notify({
-      event: { type: 'TASK_ASSIGNED', assigneeId: task.assigneeId },
+  if (newAssigneeId || newStatus) {
+    const context = await notificationContext(userId, boardId);
+    const base = {
       actorId: userId,
-      actorName: actor?.name ?? null,
+      ...context,
       boardId,
-      boardTitle: boardRow?.title ?? null,
       taskId: task.id,
       taskTitle: task.title,
-    });
+    };
+
+    if (newAssigneeId) {
+      await notify({ ...base, event: { type: 'TASK_ASSIGNED', assigneeId: newAssigneeId } });
+    }
+
+    if (newStatus) {
+      await notify({
+        ...base,
+        event: { type: 'TASK_STATUS_CHANGED', taskId: task.id },
+        meta: { status: newStatus },
+      });
+    }
   }
 
   return NextResponse.json(task);
@@ -209,17 +248,13 @@ export const DELETE = withAuth<{ boardId: string; taskId: string }>(async (_req,
     logger.error({ err: error }, 'Failed to publish task deleted event');
   }
 
-  const [actor, boardRow] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
-    prisma.board.findUnique({ where: { id: boardId }, select: { title: true } }),
-  ]);
+  const context = await notificationContext(userId, boardId);
 
   await notify({
     event: { type: 'BOARD_TASK_REMOVED', boardId },
     actorId: userId,
-    actorName: actor?.name ?? null,
+    ...context,
     boardId,
-    boardTitle: boardRow?.title ?? null,
     // The task is gone, so the notification links to the board instead.
     taskId: null,
     taskTitle: existing.title,
