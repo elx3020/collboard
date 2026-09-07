@@ -138,3 +138,70 @@ describe('PATCH /api/user', () => {
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
   });
 });
+
+describe('PUT /api/user/notification-preferences', () => {
+  function request(body: unknown) {
+    return new Request('http://localhost/api/user/notification-preferences', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }) as never;
+  }
+
+  it('replaces the whole muted array', async () => {
+    mockPrisma.user.update.mockResolvedValue({
+      mutedNotificationTypes: ['TASK_COMMENTED', 'BOARD_TASK_ADDED'],
+    });
+
+    const { PUT } = await import('@/app/api/user/notification-preferences/route');
+    const res = await PUT(
+      request({ mutedTypes: ['TASK_COMMENTED', 'BOARD_TASK_ADDED'] }),
+      ctx,
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { mutedNotificationTypes: ['TASK_COMMENTED', 'BOARD_TASK_ADDED'] },
+      select: { mutedNotificationTypes: true },
+    });
+  });
+
+  it('accepts an empty array as "mute nothing"', async () => {
+    mockPrisma.user.update.mockResolvedValue({ mutedNotificationTypes: [] });
+
+    const { PUT } = await import('@/app/api/user/notification-preferences/route');
+    const res = await PUT(request({ mutedTypes: [] }), ctx);
+
+    expect(res.status).toBe(200);
+    expect(mockPrisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { mutedNotificationTypes: [] } }),
+    );
+  });
+
+  it('deduplicates repeated types', async () => {
+    mockPrisma.user.update.mockResolvedValue({ mutedNotificationTypes: ['TASK_ASSIGNED'] });
+
+    const { PUT } = await import('@/app/api/user/notification-preferences/route');
+    await PUT(request({ mutedTypes: ['TASK_ASSIGNED', 'TASK_ASSIGNED'] }), ctx);
+
+    expect(mockPrisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { mutedNotificationTypes: ['TASK_ASSIGNED'] } }),
+    );
+  });
+
+  it('rejects a value outside the enum without writing', async () => {
+    const { PUT } = await import('@/app/api/user/notification-preferences/route');
+    const res = await PUT(request({ mutedTypes: ['TASK_DELETD'] }), ctx);
+
+    expect(res.status).toBe(400);
+    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-array body without writing', async () => {
+    const { PUT } = await import('@/app/api/user/notification-preferences/route');
+    const res = await PUT(request({ mutedTypes: 'TASK_ASSIGNED' }), ctx);
+
+    expect(res.status).toBe(400);
+    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+  });
+});
