@@ -172,10 +172,24 @@ export async function updateBoardMemberRole(
  * Remove a member from a board
  */
 export async function removeBoardMember(boardId: string, userId: string) {
-  return prisma.boardMember.delete({
-    where: {
-      boardId_userId: { boardId, userId },
-    },
+  // Unassigning is part of removal, not a follow-up to it: assignment is
+  // restricted to people on the board, so leaving a task pointed at someone who
+  // just lost access would strand it — the picker would no longer offer them,
+  // and the card would name someone who cannot open the board.
+  //
+  // Scoped to this board only. The same person may be assigned tasks on other
+  // boards they are still a member of.
+  return prisma.$transaction(async (tx) => {
+    await tx.task.updateMany({
+      where: { assigneeId: userId, column: { boardId } },
+      data: { assigneeId: null },
+    });
+
+    return tx.boardMember.delete({
+      where: {
+        boardId_userId: { boardId, userId },
+      },
+    });
   });
 }
 
