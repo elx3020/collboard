@@ -1,4 +1,4 @@
-import type { AppNotification } from '@/lib/types';
+import type { AppNotification, TaskStatus } from '@/lib/types';
 
 /**
  * Builds a notification's display string from its type and snapshot columns.
@@ -25,5 +25,16 @@ export function formatNotification(n: AppNotification): string {
       return `${actor} created ${task} in ${board}`;
     case 'BOARD_TASK_REMOVED':
       return `${actor} deleted ${task} in ${board}`;
+    case 'TASK_STATUS_CHANGED': {
+      const verbs: Record<TaskStatus, string> = {
+        COMPLETED: 'completed',
+        INCOMPLETED: 'reopened',
+        ARCHIVED: 'archived',
+      };
+      const status = n.meta?.status;
+      return status
+        ? `${actor} ${verbs[status]} ${task}`
+        : `${actor} changed the status of ${task}`;
+    }
   }
 }

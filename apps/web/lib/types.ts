@@ -108,6 +108,13 @@ export type WsServerMessage =
 
 export type Role = 'OWNER' | 'EDITOR' | 'VIEWER';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TaskStatus = 'INCOMPLETED' | 'COMPLETED' | 'ARCHIVED';
+
+/**
+ * What the board header's status filter can ask for. `ACTIVE` is the default
+ * view — everything except archived — and is not a stored value.
+ */
+export type BoardStatusFilter = 'ACTIVE' | TaskStatus;
 
 export interface UserSummary {
   id: string;
@@ -178,6 +185,7 @@ export interface Task {
   order: number;
   assigneeId: string | null;
   priority: Priority;
+  status: TaskStatus;
   createdAt: string;
   updatedAt: string;
   assignee: UserSummary | null;
@@ -211,10 +219,12 @@ export type NotificationType =
   | 'BOARD_INVITED'
   | 'BOARD_ROLE_CHANGED'
   | 'BOARD_TASK_ADDED'
-  | 'BOARD_TASK_REMOVED';
+  | 'BOARD_TASK_REMOVED'
+  | 'TASK_STATUS_CHANGED';
 
 /**
- * Type-specific extras. Only BOARD_ROLE_CHANGED uses one today.
+ * Type-specific extras. `BOARD_ROLE_CHANGED` carries the new role;
+ * `TASK_STATUS_CHANGED` carries the status the task moved to.
  *
  * A type alias rather than an interface on purpose: Prisma's `InputJsonValue`
  * requires an implicit index signature, which TypeScript grants to aliases but
@@ -222,6 +232,7 @@ export type NotificationType =
  */
 export type NotificationMeta = {
   role?: Role;
+  status?: TaskStatus;
 };
 
 /**
@@ -317,6 +328,7 @@ export interface UpdateTaskRequest {
   description?: string;
   assigneeId?: string | null;
   priority?: Priority;
+  status?: TaskStatus;
 }
 
 export interface MoveTaskRequest {

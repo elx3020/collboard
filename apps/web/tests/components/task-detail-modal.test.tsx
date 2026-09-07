@@ -35,6 +35,7 @@ const task: Task = {
     order: 0,
     assigneeId: null,
     priority: 'MEDIUM',
+    status: 'INCOMPLETED',
     createdAt: '2026-09-01T00:00:00.000Z',
     updatedAt: '2026-09-01T00:00:00.000Z',
     assignee: null,

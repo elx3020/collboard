@@ -1,0 +1,8 @@
+-- CreateEnum
+CREATE TYPE "TaskStatus" AS ENUM ('INCOMPLETED', 'COMPLETED', 'ARCHIVED');
+
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'TASK_STATUS_CHANGED';
+
+-- AlterTable
+ALTER TABLE "Task" ADD COLUMN     "status" "TaskStatus" NOT NULL DEFAULT 'INCOMPLETED';

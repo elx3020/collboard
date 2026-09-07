@@ -55,4 +55,40 @@ describe('formatNotification', () => {
     const n = make('BOARD_TASK_ADDED', { taskTitle: null, boardTitle: null });
     expect(formatNotification(n)).toBe('Ada created a task in a board');
   });
+
+  it('names the completion of a task', () => {
+    expect(
+      formatNotification(make('TASK_STATUS_CHANGED', { meta: { status: 'COMPLETED' } })),
+    ).toBe('Ada completed Fix login');
+  });
+
+  it('calls a return to incompleted a reopen', () => {
+    expect(
+      formatNotification(make('TASK_STATUS_CHANGED', { meta: { status: 'INCOMPLETED' } })),
+    ).toBe('Ada reopened Fix login');
+  });
+
+  it('names an archive', () => {
+    expect(
+      formatNotification(make('TASK_STATUS_CHANGED', { meta: { status: 'ARCHIVED' } })),
+    ).toBe('Ada archived Fix login');
+  });
+
+  it('falls back to a generic phrase when meta is missing', () => {
+    expect(formatNotification(make('TASK_STATUS_CHANGED', { meta: null }))).toBe(
+      'Ada changed the status of Fix login',
+    );
+  });
+
+  it('falls back for a deleted actor and task', () => {
+    expect(
+      formatNotification(
+        make('TASK_STATUS_CHANGED', {
+          actorName: null,
+          taskTitle: null,
+          meta: { status: 'COMPLETED' },
+        }),
+      ),
+    ).toBe('Someone completed a task');
+  });
 });

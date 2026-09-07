@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 export type NotifyEvent =
   | { type: 'TASK_ASSIGNED'; assigneeId: string | null }
   | { type: 'TASK_COMMENTED'; taskId: string }
+  | { type: 'TASK_STATUS_CHANGED'; taskId: string }
   | { type: 'BOARD_INVITED'; targetUserId: string }
   | { type: 'BOARD_ROLE_CHANGED'; targetUserId: string }
   | { type: 'BOARD_TASK_ADDED'; boardId: string }
@@ -62,6 +63,7 @@ export async function resolveRecipients(
       candidates = event.assigneeId ? [event.assigneeId] : [];
       break;
     case 'TASK_COMMENTED':
+    case 'TASK_STATUS_CHANGED':
       candidates = await taskAudience(event.taskId);
       break;
     case 'BOARD_INVITED':

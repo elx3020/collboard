@@ -178,6 +178,7 @@ describe('TaskCard', () => {
             order: 0,
             assigneeId: 'user-1',
             priority: 'HIGH' as const,
+            status: 'INCOMPLETED' as const,
             createdAt: '2026-01-01',
             updatedAt: '2026-01-01',
             assignee: { id: 'user-1', name: 'Alice', email: 'alice@t.com', image: null },

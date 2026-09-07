@@ -154,4 +154,45 @@ describe('resolveRecipients', () => {
     expect(result).toEqual([]);
     expect(mockPrisma.user.findMany).not.toHaveBeenCalled();
   });
+
+  it('notifies the assignee and prior commenters on TASK_STATUS_CHANGED', async () => {
+    mockPrisma.task.findUnique.mockResolvedValue({ assigneeId: 'user-2' });
+    mockPrisma.comment.findMany.mockResolvedValue([
+      { userId: 'user-3' },
+      { userId: 'user-3' },
+    ]);
+
+    const result = await resolveRecipients(
+      { type: 'TASK_STATUS_CHANGED', taskId: 'task-1' },
+      'user-1',
+    );
+
+    expect(result.sort()).toEqual(['user-2', 'user-3']);
+  });
+
+  it('does not notify the person who changed the status', async () => {
+    mockPrisma.task.findUnique.mockResolvedValue({ assigneeId: 'user-1' });
+    mockPrisma.comment.findMany.mockResolvedValue([]);
+
+    const result = await resolveRecipients(
+      { type: 'TASK_STATUS_CHANGED', taskId: 'task-1' },
+      'user-1',
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it('drops recipients who muted TASK_STATUS_CHANGED', async () => {
+    mockPrisma.task.findUnique.mockResolvedValue({ assigneeId: 'user-2' });
+    mockPrisma.comment.findMany.mockResolvedValue([{ userId: 'user-3' }]);
+    // Only user-3 comes back from the "has not muted" query.
+    mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-3' }]);
+
+    const result = await resolveRecipients(
+      { type: 'TASK_STATUS_CHANGED', taskId: 'task-1' },
+      'user-1',
+    );
+
+    expect(result).toEqual(['user-3']);
+  });
 });

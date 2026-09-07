@@ -163,6 +163,7 @@ model Task {
   order       Int
   assigneeId  String?
   priority    Priority  @default(MEDIUM)
+  status      TaskStatus @default(INCOMPLETED)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
@@ -208,6 +209,12 @@ enum Priority {
   URGENT
 }
 
+enum TaskStatus {
+  INCOMPLETED
+  COMPLETED
+  ARCHIVED
+}
+
 // Notification model - one row per recipient per event
 model Notification {
   id         String           @id @default(cuid())
@@ -245,4 +252,5 @@ enum NotificationType {
   BOARD_ROLE_CHANGED
   BOARD_TASK_ADDED
   BOARD_TASK_REMOVED
+  TASK_STATUS_CHANGED
 }
