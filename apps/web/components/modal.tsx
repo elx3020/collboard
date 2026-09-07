@@ -16,13 +16,19 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     const overlayRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
+
+    const onCloseRef = useRef(onClose);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    });
+
     // Trap focus and handle Escape
     useEffect(() => {
         if (!open) return;
 
         const handleKeyDown = (e: globalThis.KeyboardEvent) => {
             if (e.key === 'Escape') {
-                onClose();
+                onCloseRef.current();
                 return;
             }
 
@@ -51,7 +57,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
         document.body.style.overflow = 'hidden';
 
         // Focus first focusable element
-        setTimeout(() => {
+        const focusTimer = setTimeout(() => {
             const focusable = contentRef.current?.querySelector<HTMLElement>(
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
             );
@@ -59,10 +65,11 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
         }, 50);
 
         return () => {
+            clearTimeout(focusTimer);
             document.removeEventListener('keydown', handleKeyDown);
             document.body.style.overflow = '';
         };
-    }, [open, onClose]);
+    }, [open]);
 
     if (!open) return null;
 
