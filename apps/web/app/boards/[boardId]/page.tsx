@@ -25,12 +25,14 @@ import {
   useDeleteColumn,
   useUpdateColumn,
   useMoveTask,
+  useUpdateTask,
 } from '@/lib/hooks/use-queries';
+import { tasksApi } from '@/lib/api';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useBoardRealtime } from '@/lib/hooks/use-board-realtime';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/hooks/use-queries';
-import type { Task, Column } from '@/lib/types';
+import type { Task, Column, BoardStatusFilter } from '@/lib/types';
 
 // Lazy load heavy modals — only loaded when opened
 const TaskDetailModal = lazy(() =>
@@ -46,12 +48,6 @@ export default function BoardPage() {
   const boardId = params.boardId;
   const queryClient = useQueryClient();
 
-  const { data: board, isLoading, error } = useBoard(boardId);
-  const createColumn = useCreateColumn(boardId);
-  const deleteColumn = useDeleteColumn(boardId);
-  const updateColumn = useUpdateColumn(boardId);
-  const moveTask = useMoveTask(boardId);
-
   const {
     selectedTask,
     taskModalOpen,
@@ -63,7 +59,15 @@ export default function BoardPage() {
     closeCreateTaskModal,
     searchQuery,
     priorityFilter,
+    statusFilter,
   } = useUIStore();
+
+  // The status filter is a server param, so it belongs to the board query key.
+  const { data: board, isLoading, error } = useBoard(boardId, statusFilter);
+  const createColumn = useCreateColumn(boardId);
+  const deleteColumn = useDeleteColumn(boardId);
+  const updateColumn = useUpdateColumn(boardId);
+  const moveTask = useMoveTask(boardId);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [addingColumn, setAddingColumn] = useState(false);
@@ -85,9 +89,30 @@ export default function BoardPage() {
 
     if (task) {
       openTaskModal(task);
+      router.replace(`/boards/${board.id}`, { scroll: false });
+      return;
     }
 
-    router.replace(`/boards/${board.id}`, { scroll: false });
+    // Not in the payload: the board is filtered and this task is archived or
+    // otherwise excluded. The single-task endpoint ignores status, so fetch it
+    // directly rather than leaving the notification link dead.
+    let cancelled = false;
+
+    tasksApi
+      .get(board.id, requestedTaskId)
+      .then((fetched) => {
+        if (!cancelled) openTaskModal(fetched);
+      })
+      .catch(() => {
+        // A deleted task, or one the viewer cannot see. Nothing to open.
+      })
+      .finally(() => {
+        if (!cancelled) router.replace(`/boards/${board.id}`, { scroll: false });
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [requestedTaskId, board, openTaskModal, router]);
 
   // Real-time: invalidate board query on incoming events
@@ -117,6 +142,8 @@ export default function BoardPage() {
       }),
     }));
   }, [board?.columns, searchQuery, priorityFilter]);
+
+  const updateTask = useUpdateTask(boardId);
 
   // DnD sensors — pointer with activation threshold + keyboard
   const sensors = useSensors(
@@ -277,6 +304,19 @@ export default function BoardPage() {
               <option value="MEDIUM">Medium</option>
               <option value="LOW">Low</option>
             </select>
+            <select
+              value={statusFilter}
+              onChange={(e) =>
+                useUIStore.getState().setStatusFilter(e.target.value as BoardStatusFilter)
+              }
+              className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
+              aria-label="Filter by status"
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INCOMPLETED">Incompleted</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
           </div>
         </div>
       </div>
@@ -297,6 +337,14 @@ export default function BoardPage() {
                 tasks={column.tasks}
                 onAddTask={openCreateTaskModal}
                 onTaskClick={openTaskModal}
+                onToggleStatus={(task) =>
+                  updateTask.mutate({
+                    taskId: task.id,
+                    data: {
+                      status: task.status === 'COMPLETED' ? 'INCOMPLETED' : 'COMPLETED',
+                    },
+                  })
+                }
                 onDeleteColumn={(colId) => deleteColumn.mutate(colId)}
                 onRenameColumn={(colId, title) =>
                   updateColumn.mutate({ columnId: colId, title })
