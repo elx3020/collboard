@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useRef, useState } from 'react';
+import { clsx } from 'clsx';
 import { Modal } from '@/components/modal';
 import { Avatar, Spinner } from '@/components/ui-shared';
 import {
@@ -11,7 +12,15 @@ import {
     useDeleteTask,
 } from '@/lib/hooks/use-queries';
 import { AssigneePicker } from '@/components/board/assignee-picker';
-import type { Task, Priority, UpdateTaskRequest } from '@/lib/types';
+import { CircleIcon, CheckCircleIcon, ArchiveIcon } from '@/components/icons';
+import type { Task, Priority, TaskStatus, UpdateTaskRequest } from '@/lib/types';
+
+/** The three statuses, in the order they appear in the modal. */
+const STATUS_OPTIONS: { value: TaskStatus; label: string; Icon: typeof CircleIcon }[] = [
+    { value: 'INCOMPLETED', label: 'Incompleted', Icon: CircleIcon },
+    { value: 'COMPLETED', label: 'Completed', Icon: CheckCircleIcon },
+    { value: 'ARCHIVED', label: 'Archived', Icon: ArchiveIcon },
+];
 
 interface TaskDetailModalProps {
     open: boolean;
@@ -24,6 +33,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
     const [editTitle, setEditTitle] = useState(task.title);
     const [editDescription, setEditDescription] = useState(task.description || '');
     const [editPriority, setEditPriority] = useState<Priority>(task.priority);
+    const [editStatus, setEditStatus] = useState<TaskStatus>(task.status);
     const [editAssigneeId, setEditAssigneeId] = useState<string | null>(task.assigneeId);
     const [commentText, setCommentText] = useState('');
     const deletedRef = useRef(false);
@@ -43,6 +53,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
         if (title && title !== task.title) changes.title = title;
         if (description !== (task.description || '').trim()) changes.description = description;
         if (editPriority !== task.priority) changes.priority = editPriority;
+        if (editStatus !== task.status) changes.status = editStatus;
         // null is a meaningful value here — it unassigns — so this compares
         // against the task's own null rather than testing for truthiness.
         if (editAssigneeId !== task.assigneeId) changes.assigneeId = editAssigneeId;
@@ -93,6 +104,26 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                         aria-label="Task description"
                         className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-none"
                     />
+                    <div role="group" aria-label="Task status" className="flex gap-2">
+                        {STATUS_OPTIONS.map(({ value, label, Icon }) => (
+                            <button
+                                key={value}
+                                type="button"
+                                onClick={() => setEditStatus(value)}
+                                aria-pressed={editStatus === value}
+                                className={clsx(
+                                    'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors',
+                                    editStatus === value
+                                        ? 'border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-foreground)]'
+                                        : 'border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]'
+                                )}
+                            >
+                                <Icon className="h-4 w-4" />
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-3">
                         <select
                             value={editPriority}

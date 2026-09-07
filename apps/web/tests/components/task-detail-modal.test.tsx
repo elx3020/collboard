@@ -121,4 +121,42 @@ describe('TaskDetailModal', () => {
         });
         expect(onClose).toHaveBeenCalled();
     });
+
+    it('shows the current status as pressed', async () => {
+        const { TaskDetailModal } = await import('@/components/board/task-detail-modal');
+        render(<TaskDetailModal open onClose={() => {}} task={task} boardId="board-1" />);
+        settleAutoFocus();
+
+        expect(
+            screen.getByRole('button', { name: 'Incompleted' }).getAttribute('aria-pressed')
+        ).toBe('true');
+        expect(
+            screen.getByRole('button', { name: 'Completed' }).getAttribute('aria-pressed')
+        ).toBe('false');
+    });
+
+    it('saves a status change on close', async () => {
+        const { TaskDetailModal } = await import('@/components/board/task-detail-modal');
+        render(<TaskDetailModal open onClose={() => {}} task={task} boardId="board-1" />);
+        settleAutoFocus();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Archived' }));
+        fireEvent.click(screen.getByLabelText('Close'));
+
+        expect(updateMutate).toHaveBeenCalledWith({
+            taskId: 'task-1',
+            data: { status: 'ARCHIVED' },
+        });
+    });
+
+    it('does not re-save a status that was not changed', async () => {
+        const { TaskDetailModal } = await import('@/components/board/task-detail-modal');
+        render(<TaskDetailModal open onClose={() => {}} task={task} boardId="board-1" />);
+        settleAutoFocus();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Incompleted' }));
+        fireEvent.click(screen.getByLabelText('Close'));
+
+        expect(updateMutate).not.toHaveBeenCalled();
+    });
 });
