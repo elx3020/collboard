@@ -3,15 +3,33 @@ import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 import { isBoardColor } from '@/lib/boards/board-colors';
 import { requireBoardPermission } from '@/lib/auth/rbac';
+import type { TaskStatus } from '@/lib/types';
+
+const TASK_STATUSES = ['INCOMPLETED', 'COMPLETED', 'ARCHIVED'];
 
 /**
  * GET /api/boards/[boardId]
  * Get a single board with all columns, tasks, and members.
  */
-export const GET = withAuth<{ boardId: string }>(async (_req, { params, userId }) => {
+export const GET = withAuth<{ boardId: string }>(async (req, { params, userId }) => {
   const { boardId } = params;
 
   await requireBoardPermission(userId, boardId, 'board:view');
+
+  const status = new URL(req.url).searchParams.get('status');
+
+  if (status !== null && !TASK_STATUSES.includes(status)) {
+    return NextResponse.json(
+      { error: `Invalid status. Must be one of: ${TASK_STATUSES.join(', ')}` },
+      { status: 400 }
+    );
+  }
+
+  // No filter means "everything except archived": archived tasks stay out of
+  // the board until the header filter asks for them by name.
+  const taskWhere = status
+    ? { status: status as TaskStatus }
+    : { status: { not: 'ARCHIVED' as const } };
 
   const board = await prisma.board.findUnique({
     where: { id: boardId },
@@ -23,6 +41,7 @@ export const GET = withAuth<{ boardId: string }>(async (_req, { params, userId }
         orderBy: { order: 'asc' },
         include: {
           tasks: {
+            where: taskWhere,
             orderBy: { order: 'asc' },
             include: {
               assignee: {
