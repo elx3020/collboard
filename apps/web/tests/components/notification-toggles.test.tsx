@@ -33,7 +33,7 @@ describe('NotificationToggles', () => {
         const { NotificationToggles } = await import('@/components/settings/notification-toggles');
         render(<NotificationToggles />);
 
-        expect(screen.getAllByRole('switch')).toHaveLength(6);
+        expect(screen.getAllByRole('switch')).toHaveLength(7);
     });
 
     it('shows a muted type as off and an unmuted type as on', async () => {

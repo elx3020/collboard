@@ -41,6 +41,11 @@ const SETTINGS: { type: NotificationType; label: string; hint: string }[] = [
         label: 'Deleted tasks on your boards',
         hint: 'Every task deleted from a board you belong to.',
     },
+    {
+        type: 'TASK_STATUS_CHANGED',
+        label: 'Status changes on your tasks',
+        hint: 'Tasks you are assigned to or have commented on.',
+    },
 ];
 
 export function NotificationToggles() {
