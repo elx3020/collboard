@@ -26,6 +26,7 @@ import {
   useUpdateColumn,
   useMoveTask,
   useUpdateTask,
+  useMembers,
 } from '@/lib/hooks/use-queries';
 import { tasksApi } from '@/lib/api';
 import { useUIStore } from '@/lib/stores/ui-store';
@@ -144,6 +145,20 @@ export default function BoardPage() {
   }, [board?.columns, searchQuery, priorityFilter]);
 
   const updateTask = useUpdateTask(boardId);
+  const { data: memberList } = useMembers(boardId);
+  // The owner arrives on its own key, so a plain members.map() would leave the
+  // board owner unassignable. Deduplicated in case an owner also holds a row.
+  const assignees = useMemo(
+    () =>
+      memberList
+        ? [
+            ...new Map(
+              [memberList.owner, ...memberList.members].map((p) => [p.userId, p])
+            ).values(),
+          ]
+        : [],
+    [memberList]
+  );
 
   // DnD sensors — pointer with activation threshold + keyboard
   const sensors = useSensors(
@@ -345,6 +360,10 @@ export default function BoardPage() {
                     },
                   })
                 }
+                onUpdateTask={(task, data) =>
+                  updateTask.mutate({ taskId: task.id, data })
+                }
+                assignees={assignees}
                 onDeleteColumn={(colId) => deleteColumn.mutate(colId)}
                 onRenameColumn={(colId, title) =>
                   updateColumn.mutate({ columnId: colId, title })

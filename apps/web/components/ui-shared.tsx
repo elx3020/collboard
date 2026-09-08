@@ -5,12 +5,23 @@ import Image from 'next/image';
 import type { Priority } from '@/lib/types';
 import { SpinnerIcon } from '@/components/icons';
 
-const priorityConfig: Record<Priority, { label: string; color: string; bgColor: string }> = {
-    URGENT: { label: 'Urgent', color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' },
-    HIGH: { label: 'High', color: 'text-orange-700 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
-    MEDIUM: { label: 'Medium', color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
-    LOW: { label: 'Low', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' },
+/**
+ * One colour language for priority, shared by the badge and the task card.
+ * `spine` is the solid edge the card paints down its left side — readable
+ * across a whole column without reading a word.
+ */
+export const priorityConfig: Record<
+    Priority,
+    { label: string; color: string; bgColor: string; spine: string }
+> = {
+    URGENT: { label: 'Urgent', color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', spine: 'bg-red-500' },
+    HIGH: { label: 'High', color: 'text-orange-700 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', spine: 'bg-orange-500' },
+    MEDIUM: { label: 'Medium', color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', spine: 'bg-yellow-500' },
+    LOW: { label: 'Low', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', spine: 'bg-green-500' },
 };
+
+/** Priority levels, most urgent first — the order the menus list them in. */
+export const PRIORITIES: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
     const config = priorityConfig[priority];

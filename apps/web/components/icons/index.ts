@@ -18,6 +18,7 @@ export { CircleIcon } from './circle-icon';
 export { CloseIcon } from './close-icon';
 export { ColumnsIcon } from './columns-icon';
 export { CommentIcon } from './comment-icon';
+export { FilterIcon } from './filter-icon';
 export { GitHubIcon } from './github-icon';
 export { GoogleIcon } from './google-icon';
 export { GridIcon } from './grid-icon';

@@ -10,8 +10,22 @@ import { CSS } from '@dnd-kit/utilities';
 import { clsx } from 'clsx';
 import { useState } from 'react';
 import { TaskCard } from '@/components/board/task-card';
-import { CloseIcon, PlusIcon } from '@/components/icons';
-import type { Column as ColumnType, Task } from '@/lib/types';
+import { CloseIcon, PlusIcon, FilterIcon } from '@/components/icons';
+import type { Column as ColumnType, Task, UpdateTaskRequest, AssignableMember } from '@/lib/types';
+
+/**
+ * Per-column filters, from option 1b.
+ *
+ * Presentation only for now — nothing here narrows the task list yet, and no
+ * endpoint backs it. Selecting one shows the active state so the design can be
+ * reviewed; wiring comes later.
+ */
+const COLUMN_FILTERS: { label: string; hint: string }[] = [
+    { label: 'High & urgent only', hint: 'priority' },
+    { label: 'Assigned to me', hint: 'assignee' },
+    { label: 'Has comments', hint: 'activity' },
+    { label: 'Updated this week', hint: 'date' },
+];
 
 interface BoardColumnProps {
     column: ColumnType;
@@ -19,6 +33,8 @@ interface BoardColumnProps {
     onAddTask: (columnId: string) => void;
     onTaskClick: (task: Task) => void;
     onToggleStatus?: (task: Task) => void;
+    onUpdateTask?: (task: Task, data: UpdateTaskRequest) => void;
+    assignees?: AssignableMember[];
     onDeleteColumn?: (columnId: string) => void;
     onRenameColumn?: (columnId: string, title: string) => void;
 }
@@ -29,11 +45,15 @@ export function BoardColumn({
     onAddTask,
     onTaskClick,
     onToggleStatus,
+    onUpdateTask,
+    assignees,
     onDeleteColumn,
     onRenameColumn,
 }: BoardColumnProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(column.title);
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
     const {
         attributes,
@@ -113,7 +133,63 @@ export function BoardColumn({
                     </h3>
                 )}
 
-                <div className="flex items-center gap-1">
+                <div className="relative flex items-center gap-1">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setFilterOpen(!filterOpen);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        aria-label={`Filter ${column.title}`}
+                        aria-expanded={filterOpen}
+                        aria-haspopup="menu"
+                        className={clsx(
+                            'rounded-md p-1 transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]',
+                            activeFilter
+                                ? 'text-[var(--accent-foreground)] bg-[var(--accent)]'
+                                : 'text-[var(--muted-foreground)]'
+                        )}
+                    >
+                        <FilterIcon />
+                    </button>
+
+                    {filterOpen && (
+                        <div
+                            role="menu"
+                            aria-label="Filter column"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-[var(--border)] bg-[var(--card)] py-1 shadow-lg"
+                        >
+                            <div className="px-3 py-1 text-[10px] uppercase tracking-[0.1em] text-[var(--muted-foreground)]">
+                                Filter column
+                            </div>
+                            {COLUMN_FILTERS.map(({ label, hint }) => (
+                                <button
+                                    key={label}
+                                    type="button"
+                                    role="menuitemradio"
+                                    aria-checked={activeFilter === label}
+                                    onClick={() => {
+                                        setActiveFilter(activeFilter === label ? null : label);
+                                        setFilterOpen(false);
+                                    }}
+                                    className={clsx(
+                                        'flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-[var(--muted)]',
+                                        activeFilter === label
+                                            ? 'font-semibold text-[var(--foreground)]'
+                                            : 'text-[var(--foreground)]'
+                                    )}
+                                >
+                                    {label}
+                                    <span className="flex-none text-[10px] text-[var(--muted-foreground)]">
+                                        {hint}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <button
                         onClick={() => onAddTask(column.id)}
                         className="rounded-md p-1 text-[var(--muted-foreground)] hover:bg-[var(--background)] hover:text-[var(--foreground)] transition-colors"
@@ -137,6 +213,21 @@ export function BoardColumn({
                 </div>
             </div>
 
+            {activeFilter && (
+                <div className="flex items-center gap-2 border-y border-[var(--border)] bg-[var(--accent)]/15 px-3 py-1.5">
+                    <span className="truncate text-[11px] uppercase tracking-[0.08em] text-[var(--foreground)]">
+                        {activeFilter}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setActiveFilter(null)}
+                        className="ml-auto flex-none text-[11px] uppercase tracking-[0.08em] underline transition-colors hover:text-[var(--accent)]"
+                    >
+                        Clear
+                    </button>
+                </div>
+            )}
+
             {/* Tasks List */}
             <div
                 ref={setDroppableRef}
@@ -152,6 +243,8 @@ export function BoardColumn({
                             task={task}
                             onClick={() => onTaskClick(task)}
                             onToggleStatus={onToggleStatus}
+                            onUpdateTask={onUpdateTask}
+                            assignees={assignees}
                         />
                     ))}
                 </SortableContext>

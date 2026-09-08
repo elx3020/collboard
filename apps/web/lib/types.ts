@@ -162,6 +162,12 @@ export interface BoardMember {
   createdAt: string;
 }
 
+/**
+ * A person a task can be assigned to. Narrowed to what the pickers need, so
+ * the board owner — who carries no BoardMember row — fits alongside members.
+ */
+export type AssignableMember = Pick<BoardMemberEntry, 'userId' | 'name' | 'email'>;
+
 /** One entry from GET /api/boards/[boardId]/members. */
 export interface BoardMemberEntry {
   /** BoardMember row id — this is what the member routes look up by. */
