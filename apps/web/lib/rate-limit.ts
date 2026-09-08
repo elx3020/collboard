@@ -21,6 +21,25 @@ interface RateLimiterOptions {
 const DEFAULT_LIMIT = 60;
 const DEFAULT_WINDOW = 60; // seconds
 
+/**
+ * Escape hatch for end-to-end runs.
+ *
+ * Limits are keyed by client IP, but a test runner has no proxy headers, so
+ * `getClientIp` returns "unknown" and the entire suite shares one bucket —
+ * every request from every spec, against 60/min. That is a property of the
+ * harness, not of the code under test, and it makes the suite fail by volume
+ * once it grows.
+ *
+ * Deliberately inert in production: a deployed instance cannot turn limiting
+ * off through configuration, whatever this variable is set to.
+ */
+function limiterDisabled(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.RATE_LIMIT_DISABLED === 'true'
+  );
+}
+
 const store = new Map<string, RateLimitEntry>();
 
 // Periodic cleanup every 5 minutes to prevent memory leaks
@@ -56,6 +75,10 @@ export function rateLimit(
 ): { allowed: boolean; remaining: number; resetAt: number } {
   const limit = options.limit ?? DEFAULT_LIMIT;
   const windowMs = (options.windowSeconds ?? DEFAULT_WINDOW) * 1000;
+
+  if (limiterDisabled()) {
+    return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs };
+  }
 
   ensureCleanupTimer();
 

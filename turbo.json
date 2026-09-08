@@ -13,7 +13,8 @@
     "GOOGLE_CLIENT_SECRET",
     "PORT",
     "WS_PORT",
-    "LOG_LEVEL"
+    "LOG_LEVEL",
+    "RATE_LIMIT_DISABLED"
   ],
   "tasks": {
     "build": {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 
 // Use dynamic import so the module's internal Map resets between test files
 // (Vitest module caching). For per-test isolation we rely on unique keys.
@@ -53,4 +53,35 @@ describe('getClientIp', () => {
     const headers = new Headers();
     expect(getClientIp(headers)).toBe('unknown');
   });
+});
+
+describe('rateLimit escape hatch', () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('lets everything through when disabled outside production', () => {
+        vi.stubEnv('RATE_LIMIT_DISABLED', 'true');
+        const key = `test-disabled-${Date.now()}`;
+
+        for (let i = 0; i < 10; i++) {
+            expect(rateLimit(key, { limit: 3, windowSeconds: 60 }).allowed).toBe(true);
+        }
+    });
+
+    it('ignores the flag in production, so a deployment cannot switch limiting off', () => {
+        vi.stubEnv('RATE_LIMIT_DISABLED', 'true');
+        vi.stubEnv('NODE_ENV', 'production');
+        const key = `test-prod-${Date.now()}`;
+
+        rateLimit(key, { limit: 1, windowSeconds: 60 });
+        expect(rateLimit(key, { limit: 1, windowSeconds: 60 }).allowed).toBe(false);
+    });
+
+    it('limits normally when the flag is absent', () => {
+        const key = `test-default-${Date.now()}`;
+
+        rateLimit(key, { limit: 1, windowSeconds: 60 });
+        expect(rateLimit(key, { limit: 1, windowSeconds: 60 }).allowed).toBe(false);
+    });
 });

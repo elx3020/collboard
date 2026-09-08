@@ -149,6 +149,10 @@ jobs:
       NEXTAUTH_SECRET: ci-test-secret-not-for-production
       NEXTAUTH_URL: http://localhost:3000
       REDIS_URL: redis://localhost:6379
+      # The whole suite arrives from one IP with no proxy headers, so every
+      # spec shares a single 60/min bucket and later tests get 429s. Honoured
+      # only outside production — see lib/rate-limit.ts.
+      RATE_LIMIT_DISABLED: 'true'
 
     steps:
       - uses: actions/checkout@v4
