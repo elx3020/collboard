@@ -61,7 +61,7 @@ export function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="What's this board for?"
                         rows={3}
-                        className="mt-1 block w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-none"
+                        className="mt-1 block w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] resize-none"
                     />
                 </div>
                 <div className="flex justify-end gap-3 pt-2">

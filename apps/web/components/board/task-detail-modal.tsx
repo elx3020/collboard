@@ -239,7 +239,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                             onChange={(e) => setEditTitle(e.target.value)}
                             rows={1}
                             aria-label="Task title"
-                            className="-mx-2 flex-none resize-none overflow-hidden rounded-lg border border-transparent bg-transparent px-2 py-1 text-3xl font-bold leading-tight tracking-tight text-[var(--foreground)] hover:border-[var(--border)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                            className="-mx-2 flex-none resize-none overflow-hidden rounded-lg border border-transparent bg-transparent px-2 py-1 text-3xl font-bold leading-tight tracking-tight text-[var(--foreground)]"
                         />
 
                         <div className="mt-5 mb-4 h-px bg-[var(--border)]" />
@@ -251,7 +251,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                             rows={6}
                             placeholder="What needs to happen?"
                             aria-label="Task description"
-                            className="-mx-2 mt-2 min-h-32 flex-1 resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-[15px] leading-relaxed text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] hover:border-[var(--border)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                            className="-mx-2 mt-2 min-h-32 flex-1 resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-[15px] leading-relaxed text-[var(--foreground)] placeholder:text-[var(--muted-foreground)]"
                         />
 
                         <div className="mt-4 flex flex-none flex-wrap gap-x-7 gap-y-1 border-t border-[var(--border)] pt-3 text-xs text-[var(--muted-foreground)]">
@@ -361,7 +361,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
                                     rows={2}
                                     placeholder="Write a comment"
                                     aria-label="New comment"
-                                    className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                                    className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)]"
                                 />
                                 <div className="mt-2 flex justify-end">
                                     <button

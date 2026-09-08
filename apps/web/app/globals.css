@@ -79,8 +79,13 @@ body {
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
-/* Focus visible for keyboard nav */
-*:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+
+
+/* Textareas take no border or ring of their own on hover or focus — the rule
+   above is their only focus signal, the same one every other control gets.
+   @tailwindcss/forms paints a blue ring on `textarea:focus` from `@layer base`;
+   this rule is unlayered, so it clears that for every textarea on the site
+   without each one having to opt out. */
+textarea:focus {
+  box-shadow: none;
 }

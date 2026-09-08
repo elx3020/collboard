@@ -20,6 +20,10 @@ import {
 const inputClass =
     'mt-1 block w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]';
 
+/** The same field, minus the focus border and ring — see `textarea` in globals.css. */
+const textareaClass =
+    'mt-1 block w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)]';
+
 export function BoardSettingsModal({
     board,
     onClose,
@@ -179,7 +183,7 @@ export function BoardSettingsModal({
                         onChange={(e) => setDescription(e.target.value)}
                         rows={5}
                         placeholder="What's this board for?"
-                        className={`${inputClass} resize-none`}
+                        className={textareaClass}
                     />
                 </div>
 
