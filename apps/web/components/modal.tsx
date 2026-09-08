@@ -9,7 +9,7 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: ReactNode;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     /**
      * Draw the standard heading row and body padding. Pass `false` for a modal
      * that lays its own panes out edge to edge (the task detail modal) — the
@@ -83,7 +83,8 @@ export function Modal({ open, onClose, title, children, size = 'md', chrome = tr
         sm: 'max-w-sm',
         md: 'max-w-lg',
         lg: 'max-w-2xl',
-        xl: 'max-w-6xl',
+        xl: 'max-w-5xl',
+        '2xl': 'max-w-6xl',
     }[size];
 
     return (

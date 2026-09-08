@@ -21,6 +21,7 @@ import {
     ChevronLeftIcon,
 } from '@/components/icons';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
+import { fitToContent } from '@/lib/utils/fit-to-content';
 import type { Task, Priority, TaskStatus, UpdateTaskRequest } from '@/lib/types';
 
 /** The three statuses, in the order they appear in the modal. */
@@ -65,12 +66,9 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
     const titleRef = useRef<HTMLTextAreaElement>(null);
 
     // The title is a textarea, not an input, so a long one wraps into the
-    // display block instead of scrolling out of sight. Height tracks content.
+    // display block instead of scrolling out of sight.
     useEffect(() => {
-        const el = titleRef.current;
-        if (!el) return;
-        el.style.height = 'auto';
-        el.style.height = `${el.scrollHeight}px`;
+        fitToContent(titleRef.current);
     }, [editTitle, open]);
 
     const { data: comments, isLoading: commentsLoading } = useComments(boardId, task.id);
@@ -123,7 +121,7 @@ export function TaskDetailModal({ open, onClose, task, boardId }: TaskDetailModa
     };
 
     return (
-        <Modal open={open} onClose={handleClose} title={task.title} size="xl" chrome={false}>
+        <Modal open={open} onClose={handleClose} title={task.title} size="2xl" chrome={false}>
             <div className="flex h-[min(46rem,85vh)] flex-col text-[var(--foreground)]">
                 {/* Identifier strip. The title itself lives in the centre pane. */}
                 <header className="flex flex-none items-center justify-between border-b border-[var(--border)] px-6 py-3">
