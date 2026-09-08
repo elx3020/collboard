@@ -47,3 +47,4 @@ playwright/.cache/
 
 # Local demo accounts and seeded data — never commit
 DEMO_CREDENTIALS.md
+db-snapshots/

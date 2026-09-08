@@ -79,6 +79,21 @@ body {
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
-textarea:focus {
+/* Keyboard focus. Everything that can take focus gets a visible ring — buttons,
+   links, checkboxes and the like have no other way to say "you are here". */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Textareas opt out. A text field already shows focus through its caret, which
+   is why editors like Asana and Plane leave their description fields ringless;
+   the caret is an accepted focus indicator for text inputs, so dropping the
+   ring here costs nothing in keyboard accessibility. The `box-shadow` reset
+   clears the blue ring @tailwindcss/forms adds from `@layer base` — this rule
+   is unlayered, so it wins without every textarea opting out by hand. */
+textarea:focus,
+textarea:focus-visible {
+  outline: none;
   box-shadow: none;
 }

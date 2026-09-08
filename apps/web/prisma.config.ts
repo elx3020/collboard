@@ -7,6 +7,11 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // No `seed` here on purpose. Declaring it would make `prisma db seed` and
+    // `prisma migrate reset` able to write demo data against whatever
+    // DATABASE_URL is set — including production. The seed is a local-only
+    // tool, run through `npm run db:seed` (see apps/web/package.json), and it
+    // is kept out of the image entirely by .dockerignore.
   },
   datasource: {
     url: process.env["DATABASE_URL"],

@@ -40,3 +40,6 @@ LICENSE
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local-only database seed — must never reach a production image
+apps/web/prisma/seed.ts
