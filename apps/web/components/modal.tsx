@@ -9,10 +9,16 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: ReactNode;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'xl';
+    /**
+     * Draw the standard heading row and body padding. Pass `false` for a modal
+     * that lays its own panes out edge to edge (the task detail modal) — the
+     * child then owns the header, including a control labelled "Close".
+     */
+    chrome?: boolean;
 }
 
-export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ open, onClose, title, children, size = 'md', chrome = true }: ModalProps) {
     const overlayRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +83,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
         sm: 'max-w-sm',
         md: 'max-w-lg',
         lg: 'max-w-2xl',
+        xl: 'max-w-6xl',
     }[size];
 
     return (
@@ -93,22 +100,28 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
             <div
                 ref={contentRef}
                 className={clsx(
-                    'w-full rounded-xl bg-[var(--card)] p-6 shadow-xl border border-[var(--border)] animate-in fade-in zoom-in-95',
+                    'w-full rounded-xl bg-[var(--card)] shadow-xl border border-[var(--border)] animate-in fade-in zoom-in-95',
+                    // Only the edge-to-edge variant needs its panes clipped to
+                    // the rounded shell; padded modals keep overflow visible so
+                    // anything they pop out stays unclipped.
+                    chrome ? 'p-6' : 'overflow-hidden',
                     sizeClass
                 )}
             >
-                <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-2xl font-semibold text-[var(--foreground)]">
-                        {title}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="rounded-lg p-1 text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors"
-                        aria-label="Close"
-                    >
-                        <CloseIcon className="h-5 w-5" />
-                    </button>
-                </div>
+                {chrome && (
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-2xl font-semibold text-[var(--foreground)]">
+                            {title}
+                        </h2>
+                        <button
+                            onClick={onClose}
+                            className="rounded-lg p-1 text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors"
+                            aria-label="Close"
+                        >
+                            <CloseIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                )}
                 {children}
             </div>
         </div>
