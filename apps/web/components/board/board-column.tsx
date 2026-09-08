@@ -91,7 +91,7 @@ export function BoardColumn({
             ref={setSortableRef}
             style={style}
             className={clsx(
-                'flex w-72 flex-shrink-0 flex-col rounded-xl bg-[var(--muted)] border border-[var(--border)]',
+                'flex w-80 flex-shrink-0 flex-col rounded-xl bg-[var(--muted)] border border-[var(--border)]',
                 isDragging && 'opacity-40',
                 isOver && 'ring-2 ring-[var(--accent)]'
             )}
