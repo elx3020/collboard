@@ -70,6 +70,82 @@ describe('BoardCard', () => {
         expect(screen.getByText('3 members')).toBeInTheDocument();
     });
 
+    it('renders the load bar and column key from columnSummaries', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        render(
+            <BoardCard
+                board={makeBoard({
+                    columnSummaries: [
+                        { id: 'c1', title: 'To Do', taskCount: 3 },
+                        { id: 'c2', title: 'In Progress', taskCount: 1 },
+                        { id: 'c3', title: 'Done', taskCount: 0 },
+                    ],
+                })}
+                onDelete={vi.fn()}
+                onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('4 tasks')).toBeInTheDocument();
+        // Every column is keyed, including the empty one.
+        expect(screen.getByText('To Do')).toBeInTheDocument();
+        expect(screen.getByText('Done')).toBeInTheDocument();
+        expect(
+            screen.getByRole('img', { name: 'Tasks by column: To Do 3, In Progress 1, Done 0' })
+        ).toBeInTheDocument();
+    });
+
+    it('omits the load bar when the board has no columns', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        render(
+            <BoardCard board={makeBoard()} onDelete={vi.fn()} onOpenSettings={vi.fn()} onLeave={vi.fn()} />
+        );
+
+        expect(screen.queryByRole('img')).not.toBeInTheDocument();
+        expect(screen.queryByText(/tasks$/)).not.toBeInTheDocument();
+    });
+
+    it('says so in words when a board has no members', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        render(
+            <BoardCard
+                board={makeBoard({ _count: { columns: 3, members: 0 }, memberPreview: [] })}
+                onDelete={vi.fn()}
+                onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('No members yet')).toBeInTheDocument();
+        expect(screen.queryByText('0 members')).not.toBeInTheDocument();
+    });
+
+    it('collapses members past the preview into a +N chip', async () => {
+        const { BoardCard } = await import('@/components/dashboard/board-card');
+
+        render(
+            <BoardCard
+                board={makeBoard({
+                    _count: { columns: 3, members: 6 },
+                    memberPreview: [
+                        { id: 'u1', name: 'Ada', email: 'a@e.com', image: null },
+                        { id: 'u2', name: 'Grace', email: 'g@e.com', image: null },
+                    ],
+                })}
+                onDelete={vi.fn()}
+                onOpenSettings={vi.fn()}
+                onLeave={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('+4')).toBeInTheDocument();
+        expect(screen.getByText('6 members')).toBeInTheDocument();
+    });
+
     it('links to the board', async () => {
         const { BoardCard } = await import('@/components/dashboard/board-card');
 

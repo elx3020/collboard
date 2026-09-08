@@ -21,6 +21,7 @@ const mockPrisma = {
   },
   boardMember: {
     findUnique: vi.fn(),
+    findMany: vi.fn(),
   },
   user: {
     findUnique: vi.fn(),
@@ -62,10 +63,15 @@ describe('GET /api/boards', () => {
         ownerId: 'user-1',
         owner: { id: 'user-1', name: 'Test', email: 'test@test.com', image: null },
         members: [],
-        _count: { columns: 3 },
+        columns: [
+          { id: 'col-1', title: 'To Do', _count: { tasks: 2 } },
+          { id: 'col-2', title: 'Done', _count: { tasks: 1 } },
+        ],
+        _count: { columns: 3, members: 0 },
       },
     ];
     mockPrisma.board.findMany.mockResolvedValue(boards);
+    mockPrisma.boardMember.findMany.mockResolvedValue([]);
 
     const { GET } = await import('@/app/api/boards/route');
     const req = new Request('http://localhost:3000/api/boards');
@@ -76,10 +82,58 @@ describe('GET /api/boards', () => {
     expect(body).toHaveLength(1);
     expect(body[0].title).toBe('My Board');
     expect(body[0].currentUserRole).toBe('OWNER');
+    // The dashboard card reads per-column counts from here, not from `columns`.
+    expect(body[0].columnSummaries).toEqual([
+      { id: 'col-1', title: 'To Do', taskCount: 2 },
+      { id: 'col-2', title: 'Done', taskCount: 1 },
+    ]);
+  });
+
+  it('counts only unarchived tasks per column', async () => {
+    mockPrisma.board.findMany.mockResolvedValue([]);
+    mockPrisma.boardMember.findMany.mockResolvedValue([]);
+
+    const { GET } = await import('@/app/api/boards/route');
+    await GET(new Request('http://localhost:3000/api/boards') as never);
+
+    // An archived task is hidden on the board by default, so counting it here
+    // would make the card disagree with the board it links to.
+    const args = mockPrisma.board.findMany.mock.calls[0]?.[0];
+    expect(args.include.columns.select._count.select.tasks).toEqual({
+      where: { status: { not: 'ARCHIVED' } },
+    });
+  });
+
+  it('caps the member preview and keeps the roster query separate', async () => {
+    mockPrisma.board.findMany.mockResolvedValue([
+      {
+        id: 'board-1',
+        title: 'Shared',
+        ownerId: 'user-9',
+        owner: { id: 'user-9', name: 'Grace', email: 'g@e.com', image: null },
+        members: [{ id: 'm-1', userId: 'user-1', role: 'EDITOR' }],
+        columns: [],
+        _count: { columns: 0, members: 6 },
+      },
+    ]);
+    mockPrisma.boardMember.findMany.mockResolvedValue(
+      Array.from({ length: 6 }, (_, i) => ({
+        boardId: 'board-1',
+        user: { id: `u${i}`, name: `User ${i}`, email: `u${i}@e.com`, image: null },
+      }))
+    );
+
+    const { GET } = await import('@/app/api/boards/route');
+    const res = await GET(new Request('http://localhost:3000/api/boards') as never);
+    const body = await res.json();
+
+    expect(body[0].memberPreview).toHaveLength(4);
+    expect(body[0]._count.members).toBe(6);
   });
 
   it('selects the membership row id so a member can leave the board', async () => {
     mockPrisma.board.findMany.mockResolvedValue([]);
+    mockPrisma.boardMember.findMany.mockResolvedValue([]);
 
     const { GET } = await import('@/app/api/boards/route');
     await GET(new Request('http://localhost:3000/api/boards') as never);

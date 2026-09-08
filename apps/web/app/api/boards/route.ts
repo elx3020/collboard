@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/api-guard';
 
+/** How many member avatars the dashboard card shows before collapsing to "+N". */
+const MEMBER_PREVIEW_LIMIT = 4;
+
 /**
  * GET /api/boards
  * List all boards the authenticated user owns or is a member of.
@@ -26,6 +29,16 @@ export const GET = withAuth(async (_req, { userId }) => {
         select: { id: true, userId: true, role: true },
         take: 1,
       },
+      // Feeds the dashboard card's load bar. Archived tasks are left out so
+      // the card agrees with the board page, which hides them by default.
+      columns: {
+        select: {
+          id: true,
+          title: true,
+          _count: { select: { tasks: { where: { status: { not: 'ARCHIVED' } } } } },
+        },
+        orderBy: { order: 'asc' },
+      },
       _count: {
         select: { columns: true, members: true },
       },
@@ -33,13 +46,40 @@ export const GET = withAuth(async (_req, { userId }) => {
     orderBy: { updatedAt: 'desc' },
   });
 
+  // A second query rather than a nested include: `members` above is already
+  // narrowed to the current user's own row, which the leave action needs.
+  const previews = await prisma.boardMember.findMany({
+    where: { boardId: { in: boards.map((b) => b.id) } },
+    select: {
+      boardId: true,
+      user: { select: { id: true, name: true, email: true, image: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const previewByBoard = new Map<string, (typeof previews)[number]['user'][]>();
+  for (const { boardId, user } of previews) {
+    const seen = previewByBoard.get(boardId) ?? [];
+    if (seen.length < MEMBER_PREVIEW_LIMIT) seen.push(user);
+    previewByBoard.set(boardId, seen);
+  }
+
   // Attach the user's role to each board
-  const boardsWithRole = boards.map((board) => {
+  const boardsWithRole = boards.map(({ columns, ...board }) => {
     const role =
       board.ownerId === userId
         ? 'OWNER'
         : board.members[0]?.role ?? 'VIEWER';
-    return { ...board, currentUserRole: role };
+    return {
+      ...board,
+      currentUserRole: role,
+      columnSummaries: columns.map((c) => ({
+        id: c.id,
+        title: c.title,
+        taskCount: c._count.tasks,
+      })),
+      memberPreview: previewByBoard.get(board.id) ?? [],
+    };
   });
 
   return NextResponse.json(boardsWithRole);

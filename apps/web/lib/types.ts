@@ -123,6 +123,16 @@ export interface UserSummary {
   image: string | null;
 }
 
+/**
+ * One column reduced to what the dashboard card's load bar needs. Archived
+ * tasks are excluded, so the count agrees with the board's own default filter.
+ */
+export interface BoardColumnSummary {
+  id: string;
+  title: string;
+  taskCount: number;
+}
+
 export interface Board {
   id: string;
   title: string;
@@ -136,6 +146,11 @@ export interface Board {
   columns: Column[];
   currentUserRole?: Role;
   _count?: { columns: number; members: number };
+
+  /** Sent only by GET /api/boards, for the dashboard card. */
+  columnSummaries?: BoardColumnSummary[];
+  /** The first few members, for the card's avatars. Not the full roster. */
+  memberPreview?: UserSummary[];
 }
 
 export interface BoardMember {
