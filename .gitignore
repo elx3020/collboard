@@ -44,3 +44,6 @@ playwright-report/
 blob-report/
 playwright/.cache/
 .playwright-mcp/
+
+# Local demo accounts and seeded data — never commit
+DEMO_CREDENTIALS.md
